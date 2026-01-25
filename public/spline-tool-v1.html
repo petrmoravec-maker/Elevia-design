@@ -1,0 +1,3157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elevia 3D Config — Obsidian Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #0a0a0f;
+            --bg-surface: rgba(15, 20, 30, 0.85);
+            --bg-elevated: rgba(25, 35, 50, 0.9);
+            --bg-glass: rgba(20, 30, 45, 0.6);
+            --border-subtle: rgba(80, 200, 220, 0.15);
+            --border-glow: rgba(80, 200, 220, 0.4);
+            --text-primary: #f0f4f8;
+            --text-secondary: #8892a4;
+            --text-muted: #5a6678;
+            --accent: #00d4e8;
+            --accent-glow: rgba(0, 212, 232, 0.3);
+            --accent-secondary: #00ff94;
+            --danger: #ff4d6d;
+            --success: #00ff94;
+            --warning: #ffc107;
+            --gradient-accent: linear-gradient(135deg, #00d4e8 0%, #00ff94 100%);
+            --gradient-surface: linear-gradient(180deg, rgba(20, 30, 45, 0.9) 0%, rgba(10, 15, 25, 0.95) 100%);
+            --shadow-glow: 0 0 40px rgba(0, 212, 232, 0.15);
+            --shadow-depth: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Animated background grid - DISABLED */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: none;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Canvas Container */
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 10;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        #canvas-container canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        /* Object Loading Indicator */
+        .object-loader {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .object-loader-spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid rgba(0, 212, 232, 0.1);
+            border-top: 3px solid var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .object-loader-text {
+            color: var(--accent);
+            font-size: 14px;
+            font-weight: 500;
+            text-shadow: 0 2px 8px rgba(0, 212, 232, 0.3);
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+            pointer-events: auto;
+        }
+
+        html, body {
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+
+        html.scrollable, body.scrollable {
+            overflow: auto !important;
+            position: relative !important;
+            height: auto !important;
+            min-height: 800vh !important;
+        }
+
+        /* Sidebar Panel */
+        #sidebar {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            width: 420px;
+            height: calc(100vh - 48px);
+            background: var(--gradient-surface);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-depth), var(--shadow-glow);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 8px;
+            border: 1px solid var(--border-subtle);
+            overflow: hidden;
+        }
+
+        #sidebar.minimized {
+            transform: translateX(calc(420px + 48px));
+        }
+
+        /* Show Button */
+        #show-sidebar-btn {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            background: var(--bg-elevated);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 999;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow-depth);
+        }
+
+        #show-sidebar-btn:hover {
+            background: var(--bg-glass);
+            border-color: var(--border-glow);
+            box-shadow: var(--shadow-glow);
+            transform: scale(1.05);
+        }
+
+        #show-sidebar-btn.visible {
+            display: flex;
+        }
+
+        #show-sidebar-btn svg {
+            width: 24px;
+            height: 24px;
+            stroke: var(--accent);
+        }
+
+        /* Header */
+        .panel-header {
+            position: sticky;
+            top: 0;
+            background: var(--gradient-surface);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            padding: 24px;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 10;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+        }
+
+        .header-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 6px;
+            background: var(--gradient-accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 24px var(--accent-glow);
+        }
+
+        .header-icon svg {
+            width: 22px;
+            height: 22px;
+            stroke: var(--bg-deep);
+            fill: none;
+            stroke-width: 2.5;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .live-preview-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 14px;
+            background: transparent;
+            border-radius: 6px;
+            border: none;
+        }
+
+        .live-preview-toggle span {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            cursor: pointer;
+        }
+
+        .toggle-switch input {
+            display: none;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg-elevated);
+            border-radius: 100px;
+            border: 1px solid var(--border-subtle);
+            transition: 0.3s;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 2px;
+            bottom: 2px;
+            background: var(--text-secondary);
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background: var(--accent);
+            border-color: var(--accent);
+            box-shadow: 0 0 16px var(--accent-glow);
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+            background: var(--bg-deep);
+        }
+
+        .minimize-btn {
+            width: 40px;
+            height: 40px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .minimize-btn:hover {
+            border-color: var(--border-glow);
+            background: var(--bg-elevated);
+        }
+
+        .minimize-btn svg {
+            stroke: var(--text-secondary);
+            transition: stroke 0.2s;
+        }
+
+        .minimize-btn:hover svg {
+            stroke: var(--accent);
+        }
+
+        /* Content Area */
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 28px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .back-btn:hover {
+            color: var(--accent);
+        }
+
+        .back-btn svg {
+            width: 18px;
+            height: 18px;
+            transition: transform 0.2s;
+        }
+
+        .back-btn:hover svg {
+            transform: translateX(-4px);
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--success);
+            box-shadow: 0 0 12px rgba(0, 255, 148, 0.5);
+        }
+        
+        .user-avatar.logged-out {
+            background: var(--text-muted);
+            box-shadow: none;
+        }
+
+        .user-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .sign-out-btn {
+            background: transparent;
+            color: var(--text-muted);
+            border: none;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            border-radius: 8px;
+        }
+
+        .sign-out-btn:hover {
+            color: var(--danger);
+            background: rgba(255, 77, 109, 0.1);
+        }
+
+        .sign-out-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .sign-out-btn svg polyline,
+        .sign-out-btn svg line {
+            transition: all 0.2s;
+        }
+
+        .sign-out-btn:hover svg polyline,
+        .sign-out-btn:hover svg line {
+            transform: translateX(3px);
+        }
+
+        /* Form Section */
+        .form-section {
+            margin-bottom: 28px;
+        }
+
+        .form-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+
+        .form-label-icon {
+            width: 16px;
+            height: 16px;
+            stroke: var(--accent);
+        }
+
+        .form-input {
+            width: 100%;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 14px 18px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.2s;
+            height: 48px;
+            box-sizing: border-box;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0, 212, 232, 0.15);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        select.form-input {
+            padding-right: 44px;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%2300d4e8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 18px center;
+        }
+
+        /* Input with Button */
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-group .form-input {
+            flex: 1;
+        }
+
+        .load-btn {
+            background: var(--gradient-accent);
+            color: var(--bg-deep);
+            border: none;
+            padding: 14px 28px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+            font-family: 'Outfit', sans-serif;
+            box-shadow: 0 4px 20px var(--accent-glow);
+            height: 48px;
+            box-sizing: border-box;
+        }
+
+        .load-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px var(--accent-glow);
+        }
+
+        /* Scene Status */
+        .scene-status {
+            margin-top: 8px;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .status-message {
+            padding: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 500;
+            background: transparent;
+            border: none;
+            justify-content: flex-start;
+        }
+
+        .status-message svg {
+            flex-shrink: 0;
+            width: 18px;
+            height: 18px;
+            display: none;
+        }
+
+        .status-message.success {
+            color: var(--success);
+            background: transparent;
+            border: none;
+        }
+
+        .status-message.success svg {
+            stroke: var(--success);
+        }
+
+        .status-message.loading {
+            color: var(--accent);
+        }
+
+        .status-message.loading svg {
+            display: none;
+        }
+        
+        /* Animated loading dots */
+        .loading-dots {
+            display: inline-flex;
+            gap: 4px;
+            margin-left: 4px;
+        }
+        
+        .loading-dots span {
+            width: 4px;
+            height: 4px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+        
+        .loading-dots span:nth-child(1) {
+            animation-delay: 0s;
+        }
+        
+        .loading-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .loading-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes bounce {
+            0%, 80%, 100% { 
+                transform: translateY(0);
+                opacity: 0.5;
+            }
+            40% { 
+                transform: translateY(-8px);
+                opacity: 1;
+            }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Scroll Position */
+        .scroll-control {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 16px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+        }
+
+        .scroll-slider {
+            flex: 1;
+            height: 6px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: var(--bg-elevated);
+            border-radius: 3px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .scroll-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--accent);
+            border-radius: 50%;
+            cursor: grab;
+            transition: all 0.2s;
+            box-shadow: 0 0 16px var(--accent-glow);
+        }
+
+        .scroll-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 24px var(--accent-glow);
+        }
+
+        .scroll-input {
+            width: 48px;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            padding: 4px 2px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 600;
+            text-align: right;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Remove spinner arrows from number inputs */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        input[type="number"] {
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+
+        .scroll-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0, 212, 232, 0.15);
+        }
+
+        .scroll-unit {
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Breakpoint Dropdown */
+        .breakpoint-dropdown-wrapper {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 18px;
+            align-items: center;
+            position: relative;
+        }
+
+        .custom-dropdown {
+            flex: 1;
+            position: relative;
+        }
+
+        .dropdown-selected {
+            background: var(--input-bg);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            padding: 12px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Outfit', sans-serif;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+
+        .dropdown-selected:hover {
+            border-color: var(--border-glow);
+            background-color: var(--input-bg-hover);
+        }
+
+        .dropdown-selected.active {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0, 212, 232, 0.15);
+        }
+
+        .dropdown-arrow {
+            transition: transform 0.2s;
+            color: var(--accent);
+        }
+
+        .dropdown-selected.active .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+
+        .dropdown-options {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        .dropdown-options.show {
+            display: block;
+        }
+
+        .dropdown-option {
+            padding: 12px 14px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Outfit', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .dropdown-option:hover {
+            background: var(--input-bg-hover);
+            color: var(--accent);
+        }
+
+        .dropdown-option.selected {
+            background: var(--input-bg-hover);
+            color: var(--accent);
+        }
+
+        .dropdown-option.selected::after {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: var(--accent);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--accent-glow);
+        }
+
+        .dropdown-placeholder {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .dropdown-placeholder:hover {
+            color: var(--text-secondary);
+        }
+
+        .dropdown-placeholder.selected {
+            color: var(--text-muted);
+        }
+
+        .dropdown-placeholder.selected::after {
+            display: none;
+        }
+
+        .breakpoint-dropdown option:hover,
+        .breakpoint-dropdown option:checked {
+            background: var(--accent);
+            color: var(--bg-deep);
+        }
+
+        .breakpoint-settings-icon {
+            flex: 0 0 auto;
+            width: 44px;
+            height: 44px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .breakpoint-settings-icon:hover {
+            border-color: var(--border-glow);
+            background: var(--bg-elevated);
+        }
+
+        .breakpoint-settings-icon svg {
+            stroke: var(--text-muted);
+            transition: all 0.2s;
+        }
+
+        .breakpoint-settings-icon:hover svg {
+            stroke: var(--accent);
+            transform: rotate(45deg);
+        }
+
+        /* Keyframes */
+        .keyframes-header {
+            margin-bottom: 14px;
+        }
+
+        .keyframes-title {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .keyframe-item {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            margin-bottom: 10px;
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        .keyframe-item:hover {
+            border-color: var(--border-glow);
+        }
+
+        .keyframe-item.active {
+            border-color: var(--accent);
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .keyframe-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 18px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .keyframe-header:hover {
+            background: rgba(0, 212, 232, 0.05);
+        }
+
+        .keyframe-percent {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent);
+            min-width: 55px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .keyframe-name-display {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .keyframe-delete {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            border-radius: 8px;
+            opacity: 0.6;
+        }
+
+        .keyframe-delete:hover {
+            color: var(--danger);
+            background: rgba(255, 77, 109, 0.1);
+            opacity: 1;
+        }
+
+        .keyframe-delete svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .keyframe-controls {
+            padding: 0 18px 18px 18px;
+            display: none;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .keyframe-item.expanded .keyframe-controls {
+            display: flex;
+        }
+
+        .add-keyframe-btn {
+            width: 100%;
+            background: transparent;
+            border: 2px dashed var(--border-subtle);
+            color: var(--text-muted);
+            padding: 28px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.3s;
+            margin-top: 14px;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .add-keyframe-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(0, 212, 232, 0.05);
+        }
+
+        .add-keyframe-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* Control Section */
+        .control-section {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .control-label {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .axis-label {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            flex-shrink: 0;
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(0, 212, 232, 0.15);
+            color: var(--accent);
+            border: 1px solid rgba(0, 212, 232, 0.25);
+        }
+
+        .axis-label.axis-x {
+            background: rgba(0, 212, 232, 0.15);
+            color: var(--accent);
+            border: 1px solid rgba(0, 212, 232, 0.25);
+        }
+
+        .axis-label.axis-y {
+            background: rgba(0, 212, 232, 0.15);
+            color: var(--accent);
+            border: 1px solid rgba(0, 212, 232, 0.25);
+        }
+
+        .axis-label.axis-z {
+            background: rgba(0, 212, 232, 0.15);
+            color: var(--accent);
+            border: 1px solid rgba(0, 212, 232, 0.25);
+        }
+
+        .axis-slider {
+            flex: 1;
+            height: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: var(--bg-elevated);
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .axis-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: var(--accent);
+            border-radius: 50%;
+            cursor: grab;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .axis-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .axis-slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: var(--accent);
+            border: none;
+            border-radius: 50%;
+            cursor: grab;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .axis-slider::-moz-range-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .axis-input {
+            width: 80px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 8px 8px;
+            color: var(--text-primary);
+            font-size: 13px;
+            font-weight: 600;
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .input-with-unit {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .input-with-unit .axis-input {
+            padding-right: 24px;
+        }
+
+        .input-unit {
+            position: absolute;
+            right: 8px;
+            font-size: 10px;
+            color: var(--text-muted);
+            font-weight: 500;
+            pointer-events: none;
+            font-family: 'Outfit', sans-serif;
+        }
+        }
+
+        .axis-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0, 212, 232, 0.15);
+        }
+
+        /* Background Section - Segmented Control */
+        .bg-toggle {
+            display: flex;
+            gap: 0;
+            margin-bottom: 14px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 4px;
+        }
+
+        .bg-toggle button {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 10px 16px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Outfit', sans-serif;
+            position: relative;
+        }
+
+        .bg-toggle button.active {
+            background: var(--bg-deep);
+            color: var(--accent);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .bg-toggle button:hover:not(.active) {
+            color: var(--text-primary);
+        }
+
+        .color-input-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            min-height: 48px;
+        }
+
+        .picture-upload-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            min-height: 48px;
+        }
+
+        .picture-upload-container .color-hex-input {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .color-input-wrapper {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            min-width: 0;
+        }
+
+        .color-preview {
+            position: absolute;
+            left: 12px;
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 1px solid var(--border-subtle);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .color-hex-input {
+            flex: 1;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 14px 18px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.2s;
+            height: 48px;
+            box-sizing: border-box;
+        }
+
+        /* Add left padding when it has a color preview */
+        .color-input-wrapper .color-hex-input {
+            padding-left: 42px;
+        }
+
+        .color-hex-input:read-only {
+            background: var(--bg-glass);
+            opacity: 1;
+        }
+
+        .color-hex-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0, 212, 232, 0.15);
+        }
+
+        .color-hex-input::placeholder {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .color-apply-btn {
+            background: var(--gradient-accent);
+            color: var(--bg-deep);
+            border: none;
+            border-radius: 6px;
+            padding: 14px 28px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Outfit', sans-serif;
+            white-space: nowrap;
+            box-shadow: 0 4px 20px var(--accent-glow);
+            height: 48px;
+            box-sizing: border-box;
+        }
+
+        .color-apply-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px var(--accent-glow);
+        }
+
+        .color-apply-btn:active {
+            transform: translateY(1px);
+        }
+
+        /* Panel Footer */
+        .panel-footer {
+            position: sticky;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            gap: 12px;
+            padding: 20px 24px;
+            background: var(--gradient-surface);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border-top: 1px solid var(--border-subtle);
+            z-index: 10;
+        }
+
+        .btn-primary {
+            flex: 1;
+            background: var(--gradient-accent);
+            color: var(--bg-deep);
+            border: none;
+            padding: 16px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-family: 'Outfit', sans-serif;
+            box-shadow: 0 4px 20px var(--accent-glow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px var(--accent-glow);
+        }
+
+        .btn-icon {
+            width: 52px;
+            height: 52px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-icon:hover {
+            border-color: var(--border-glow);
+            background: var(--bg-elevated);
+        }
+
+        .btn-icon svg polyline,
+        .btn-icon svg line {
+            transition: all 0.2s;
+        }
+
+        .btn-icon:hover svg polyline,
+        .btn-icon:hover svg line {
+            transform: translateY(3px);
+        }
+
+        .btn-icon:hover svg {
+            stroke: var(--accent);
+        }
+
+        .btn-icon svg {
+            width: 20px;
+            height: 20px;
+            stroke: var(--text-secondary);
+            transition: stroke 0.2s;
+        }
+
+        /* Scrollbar */
+        .panel-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .panel-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .panel-content::-webkit-scrollbar-thumb {
+            background: var(--border-subtle);
+            border-radius: 3px;
+        }
+
+        .panel-content::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--gradient-surface);
+            backdrop-filter: blur(40px);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            width: 90%;
+            max-width: 520px;
+            max-height: 80vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-depth), var(--shadow-glow);
+        }
+
+        .modal-large {
+            max-width: 620px;
+        }
+
+        .modal-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .modal-close {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-muted);
+            font-size: 24px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            border-color: var(--border-glow);
+        }
+
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-footer {
+            padding: 20px 24px;
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .download-option {
+            margin-bottom: 24px;
+            padding: 20px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+        }
+
+        .download-option:last-child {
+            margin-bottom: 0;
+        }
+
+        .download-option .section-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .download-option .section-label svg {
+            stroke: var(--accent);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .btn-secondary {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-elevated);
+            border-color: var(--border-glow);
+        }
+
+        /* Setting Row */
+        .setting-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .setting-column {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .setting-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .column-header {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-120px);
+            background: var(--bg-elevated);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-glow);
+            border-radius: 6px;
+            padding: 18px 28px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            z-index: 3000;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow-glow);
+            min-width: 320px;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .toast-icon.success {
+            background: var(--success);
+            box-shadow: 0 0 16px rgba(0, 255, 148, 0.4);
+        }
+
+        .toast-icon svg {
+            width: 16px;
+            height: 16px;
+            stroke: var(--bg-deep);
+            stroke-width: 3;
+        }
+
+        .toast-message {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        /* Version Badge */
+        .version-badge {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 12px 20px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        .version-badge-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            box-shadow: 0 0 12px var(--accent-glow);
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 1; box-shadow: 0 0 12px var(--accent-glow); }
+            50% { opacity: 0.6; box-shadow: 0 0 20px var(--accent-glow); }
+        }
+
+        .version-badge-text {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Canvas Container -->
+    <div id="canvas-container">
+        <canvas id="canvas3d"></canvas>
+        <!-- Object Loading Indicator -->
+        <div class="object-loader" id="object-loader" style="display: none;">
+            <div class="object-loader-spinner"></div>
+            <div class="object-loader-text">Loading object...</div>
+        </div>
+    </div>
+
+    <!-- Version Badge -->
+    <div class="version-badge">
+        <div class="version-badge-dot"></div>
+        <span class="version-badge-text">OBSIDIAN STUDIO v1</span>
+    </div>
+
+    <!-- Show Sidebar Button -->
+    <button id="show-sidebar-btn" onclick="toggleSidebar()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+            <line x1="9" y1="3" x2="9" y2="21"/>
+        </svg>
+    </button>
+
+    <!-- Sidebar Panel -->
+    <div id="sidebar">
+        <!-- Header -->
+        <div class="panel-header">
+            <div class="header-title">
+                <div class="header-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                        <path d="M2 17l10 5 10-5"/>
+                        <path d="M2 12l10 5 10-5"/>
+                    </svg>
+                </div>
+                <span>Elevia 3D Config</span>
+            </div>
+            <div class="header-controls">
+                <div class="live-preview-toggle">
+                    <span>Live</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="live-preview-toggle" onchange="toggleLivePreview()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <button class="minimize-btn" onclick="toggleSidebar()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="panel-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <button class="back-btn" onclick="handleBack()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"/>
+                        <polyline points="12 19 5 12 12 5"/>
+                    </svg>
+                    Back
+                </button>
+
+                <div class="user-section">
+                    <div class="user-info">
+                        <div class="user-avatar"></div>
+                        <span class="user-name">User</span>
+                    </div>
+                    <button class="sign-out-btn" onclick="handleSignOut()" title="Sign out">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                            <polyline points="16 17 21 12 16 7"/>
+                            <line x1="21" y1="12" x2="9" y2="12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Configuration Name -->
+            <div class="form-section">
+                <label class="form-label">
+                    <svg class="form-label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                    Configuration Name
+                </label>
+                <input type="text" class="form-input" id="config-name" value="Untitled Config" placeholder="Enter name...">
+            </div>
+
+            <!-- Spline Scene -->
+            <div class="form-section">
+                <label class="form-label">
+                    <svg class="form-label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
+                    </svg>
+                    Spline Scene
+                </label>
+                <div class="input-group">
+                    <input type="text" class="form-input" id="spline-url" value="" placeholder="Paste Spline URL...">
+                    <button class="load-btn" onclick="loadSplineScene()">Load</button>
+                </div>
+                
+                <div class="scene-status" id="scene-status">
+                    <div class="status-message" id="status-message">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                            <line x1="12" y1="22.08" x2="12" y2="12"/>
+                        </svg>
+                        <span>Load a scene to get started</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Target Object Selection -->
+            <div class="form-section" id="object-selector-section" style="display: none;">
+                <label class="form-label">
+                    <svg class="form-label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M12 1v6m0 6v10M1 12h6m6 0h10"/>
+                    </svg>
+                    Target Object
+                </label>
+                <div class="custom-dropdown" id="object-dropdown">
+                    <div class="dropdown-selected" onclick="toggleObjectDropdown()">
+                        <span id="selected-object">Select an object...</span>
+                        <svg class="dropdown-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </div>
+                    <div class="dropdown-options" id="object-dropdown-options">
+                        <!-- Options will be populated dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scroll Position -->
+            <div class="form-section">
+                <label class="form-label">
+                    <svg class="form-label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <polyline points="19 12 12 19 5 12"/>
+                    </svg>
+                    Scroll Position
+                </label>
+                
+                <div class="scroll-control">
+                    <input type="range" id="scroll-slider" min="0" max="100" step="1" value="0" class="scroll-slider">
+                    <input type="number" id="scroll-value" min="0" max="100" step="1" value="0" class="scroll-input">
+                    <span class="scroll-unit">%</span>
+                </div>
+            </div>
+
+            <!-- Breakpoints -->
+            <div class="form-section">
+                <label class="form-label">
+                    <svg class="form-label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                        <line x1="8" y1="21" x2="16" y2="21"/>
+                        <line x1="12" y1="17" x2="12" y2="21"/>
+                    </svg>
+                    Responsive Breakpoints
+                </label>
+                
+                <div class="breakpoint-dropdown-wrapper">
+                    <div class="custom-dropdown">
+                        <div class="dropdown-selected" onclick="toggleDropdown()">
+                            <span id="selected-breakpoint">Tablet</span>
+                            <svg class="dropdown-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 12 15 18 9"/>
+                            </svg>
+                        </div>
+                        <div class="dropdown-options" id="dropdown-options">
+                            <div class="dropdown-option" data-value="monitor" onclick="selectBreakpoint('monitor', 'Monitor')">Monitor</div>
+                            <div class="dropdown-option" data-value="desktop" onclick="selectBreakpoint('desktop', 'Desktop')">Desktop</div>
+                            <div class="dropdown-option" data-value="laptop" onclick="selectBreakpoint('laptop', 'Laptop')">Laptop</div>
+                            <div class="dropdown-option selected" data-value="tablet" onclick="selectBreakpoint('tablet', 'Tablet')">Tablet</div>
+                            <div class="dropdown-option" data-value="mobile" onclick="selectBreakpoint('mobile', 'Mobile')">Mobile</div>
+                        </div>
+                    </div>
+                    <button class="breakpoint-settings-icon" onclick="openBreakpointSettings()" title="Edit breakpoint settings">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="keyframes-section">
+                    <div class="keyframes-header">
+                        <span class="keyframes-title" id="keyframes-title">POSITIONS ( TABLET )</span>
+                    </div>
+                    
+                    <div class="keyframes-container" id="keyframes-container">
+                    </div>
+
+                    <button class="add-keyframe-btn" onclick="addKeyframe()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        Add Position
+                    </button>
+                </div>
+            </div>
+
+            <!-- Background -->
+            <div class="form-section">
+                <label class="form-label">
+                    <svg class="form-label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                    Background
+                </label>
+                <div class="bg-toggle">
+                    <button class="active" onclick="setBackgroundMode('color')">Color</button>
+                    <button onclick="setBackgroundMode('picture')">Picture</button>
+                </div>
+                
+                <div class="color-input-container" id="bg-color-section">
+                    <div class="color-input-wrapper">
+                        <div class="color-preview" id="color-preview" style="background: #0a0a0f;"></div>
+                        <input type="text" class="color-hex-input" id="bg-color-hex" value="#0a0a0f" placeholder="#000000">
+                    </div>
+                    <button class="color-apply-btn" onclick="applyBackgroundColor()">Apply</button>
+                </div>
+                
+                <div class="picture-upload-container" id="bg-picture-section" style="display: none;">
+                    <input type="text" class="color-hex-input" id="bg-picture-name" placeholder="Select image..." readonly style="cursor: pointer;" onclick="document.getElementById('bg-picture').click()">
+                    <input type="file" id="bg-picture" accept="image/*" style="display: none;">
+                    <button class="color-apply-btn" id="bg-picture-btn" onclick="selectBackgroundImage()">Select</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel Footer -->
+        <div class="panel-footer">
+            <button class="btn-primary" onclick="saveToDrive()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+                    <polyline points="17 21 17 13 7 13 7 21"/>
+                    <polyline points="7 3 7 8 15 8"/>
+                </svg>
+                Save to Drive
+            </button>
+            <button class="btn-icon" onclick="openDownloadModal()" title="Download">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Download Modal -->
+    <div class="modal-overlay" id="download-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Copy Code</h3>
+                <button class="modal-close" onclick="closeDownloadModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="download-option">
+                    <label class="section-label">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                            <polyline points="10 9 9 9 8 9"/>
+                        </svg>
+                        JSON Configuration
+                    </label>
+                    <button class="btn btn-secondary" onclick="copyJSON()" style="width: 100%;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        </svg>
+                        Copy JSON to Clipboard
+                    </button>
+                </div>
+
+                <div class="download-option">
+                    <label class="section-label">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="16 18 22 12 16 6"/>
+                            <polyline points="8 6 2 12 8 18"/>
+                        </svg>
+                        CSS Code
+                    </label>
+                    <select id="css-breakpoint-select" class="form-input" style="margin-bottom: 12px;">
+                        <option value="monitor">Monitor</option>
+                        <option value="desktop">Desktop</option>
+                        <option value="laptop">Laptop</option>
+                        <option value="tablet" selected>Tablet</option>
+                        <option value="mobile">Mobile</option>
+                    </select>
+                    <button class="btn btn-secondary" onclick="copyCSS()" style="width: 100%;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        </svg>
+                        Copy CSS to Clipboard
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Breakpoint Settings Modal -->
+    <div class="modal-overlay" id="breakpoint-modal">
+        <div class="modal modal-large">
+            <div class="modal-header">
+                <h3 class="modal-title">Breakpoint Settings</h3>
+                <button class="modal-close" onclick="closeBreakpointModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--text-secondary); margin-bottom: 24px; font-size: 14px;">
+                    Configure viewport widths and Position X range limits for each responsive breakpoint.
+                </p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+                    <div class="column-header">Viewport Width</div>
+                    <div class="column-header">Position X Range</div>
+                </div>
+                
+                <div class="setting-row">
+                    <div class="setting-column">
+                        <label class="setting-label">Monitor (min-width)</label>
+                        <input type="number" class="form-input" id="bp-monitor" value="1440" min="0" step="1">
+                    </div>
+                    <div class="setting-column">
+                        <label class="setting-label">Max X Range (px)</label>
+                        <input type="number" class="form-input" id="bp-monitor-x" value="500" min="0" step="10">
+                    </div>
+                </div>
+                
+                <div class="setting-row">
+                    <div class="setting-column">
+                        <label class="setting-label">Desktop (min-width)</label>
+                        <input type="number" class="form-input" id="bp-desktop" value="1280" min="0" step="1">
+                    </div>
+                    <div class="setting-column">
+                        <label class="setting-label">Max X Range (px)</label>
+                        <input type="number" class="form-input" id="bp-desktop-x" value="500" min="0" step="10">
+                    </div>
+                </div>
+                
+                <div class="setting-row">
+                    <div class="setting-column">
+                        <label class="setting-label">Laptop (min-width)</label>
+                        <input type="number" class="form-input" id="bp-laptop" value="992" min="0" step="1">
+                    </div>
+                    <div class="setting-column">
+                        <label class="setting-label">Max X Range (px)</label>
+                        <input type="number" class="form-input" id="bp-laptop-x" value="500" min="0" step="10">
+                    </div>
+                </div>
+                
+                <div class="setting-row">
+                    <div class="setting-column">
+                        <label class="setting-label">Tablet (min-width)</label>
+                        <input type="number" class="form-input" id="bp-tablet" value="768" min="0" step="1">
+                    </div>
+                    <div class="setting-column">
+                        <label class="setting-label">Max X Range (px)</label>
+                        <input type="number" class="form-input" id="bp-tablet-x" value="500" min="0" step="10">
+                    </div>
+                </div>
+                
+                <div class="setting-row">
+                    <div class="setting-column">
+                        <label class="setting-label">Mobile (min-width)</label>
+                        <input type="number" class="form-input" id="bp-mobile" value="0" min="0" step="1">
+                    </div>
+                    <div class="setting-column">
+                        <label class="setting-label">Max X Range (px)</label>
+                        <input type="number" class="form-input" id="bp-mobile-x" value="500" min="0" step="10">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeBreakpointModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveBreakpointSettings()">Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Save Confirmation Modal -->
+    <div class="modal-overlay" id="save-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Save Configuration?</h3>
+                <button class="modal-close" onclick="closeSaveModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--text-secondary); font-size: 14px;">
+                    Do you want to save your configuration to Google Drive before leaving?
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="leaveWithoutSaving()">Don't Save</button>
+                <button class="btn btn-primary" onclick="saveAndLeave()">Save to Drive</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <div class="toast-icon success">
+            <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+            </svg>
+        </div>
+        <span class="toast-message" id="toast-message">Settings saved!</span>
+    </div>
+
+    <!-- Spline Runtime -->
+    <script type="module" src="https://unpkg.com/@splinetool/runtime@1.0.38/build/runtime.js"></script>
+    
+    <script type="module">
+        import { Application } from 'https://unpkg.com/@splinetool/runtime@1.0.38/build/runtime.js';
+
+        let splineApp = null;
+        let allSceneObjects = []; // Store all found objects for show/hide functionality
+        let currentConfig = {
+            name: 'Untitled Config',
+            splineUrl: '',
+            targetObject: null,
+            originalPosition: null, // Store original object position
+            backgroundColor: '#0a0a0f',
+            backgroundMode: 'color',
+            livePreview: false,
+            scrollPosition: 0,
+            activeBreakpoint: 'tablet',
+            breakpoints: {
+                monitor: { minWidth: 1440, maxXRange: 500, keyframes: [] },
+                desktop: { minWidth: 1280, maxXRange: 500, keyframes: [] },
+                laptop: { minWidth: 992, maxXRange: 500, keyframes: [] },
+                tablet: { minWidth: 768, maxXRange: 500, keyframes: [] },
+                mobile: { minWidth: 0, maxXRange: 500, keyframes: [] }
+            }
+        };
+
+        // Update Add Position button state based on scroll position
+        function updateAddPositionButton() {
+            const breakpoint = currentConfig.activeBreakpoint;
+            const keyframes = currentConfig.breakpoints[breakpoint].keyframes;
+            const currentScroll = currentConfig.scrollPosition;
+            const addBtn = document.querySelector('.add-keyframe-btn');
+            
+            if (!addBtn) return;
+            
+            // Find the highest scroll position in existing keyframes
+            const maxPosition = keyframes.length > 0 
+                ? Math.max(...keyframes.map(kf => kf.position))
+                : -1;
+            
+            // Disable button if current scroll is less than or equal to last position
+            if (currentScroll <= maxPosition) {
+                addBtn.disabled = true;
+                addBtn.style.opacity = '0.4';
+                addBtn.style.cursor = 'not-allowed';
+                addBtn.title = `Scroll position must be greater than ${maxPosition}%`;
+            } else {
+                addBtn.disabled = false;
+                addBtn.style.opacity = '1';
+                addBtn.style.cursor = 'pointer';
+                addBtn.title = 'Add new position keyframe';
+            }
+        }
+        
+        // Sync scroll slider and input
+        const scrollSlider = document.getElementById('scroll-slider');
+        const scrollValue = document.getElementById('scroll-value');
+        
+        if (scrollSlider && scrollValue) {
+            scrollSlider.addEventListener('input', (e) => {
+                const val = e.target.value;
+                scrollValue.value = val;
+                currentConfig.scrollPosition = parseInt(val);
+                
+                // Update Add Position button state
+                updateAddPositionButton();
+                
+                // Apply transformation if live preview is on
+                if (currentConfig.livePreview) {
+                    applyTransformation();
+                }
+            });
+            
+            scrollValue.addEventListener('input', (e) => {
+                let val = Math.max(0, Math.min(100, parseInt(e.target.value) || 0));
+                scrollSlider.value = val;
+                scrollValue.value = val;
+                currentConfig.scrollPosition = val;
+                
+                // Update Add Position button state
+                updateAddPositionButton();
+                
+                // Apply transformation if live preview is on
+                if (currentConfig.livePreview) {
+                    applyTransformation();
+                }
+            });
+        }
+
+        // Toggle Live Preview
+        window.toggleLivePreview = function() {
+            currentConfig.livePreview = document.getElementById('live-preview-toggle').checked;
+            console.log('Live preview:', currentConfig.livePreview ? 'On' : 'Off');
+        };
+
+        // Add Keyframe
+        window.addKeyframe = function() {
+            const position = currentConfig.scrollPosition;
+            const breakpoint = currentConfig.activeBreakpoint;
+            const keyframes = currentConfig.breakpoints[breakpoint].keyframes;
+            
+            // Find the highest scroll position in existing keyframes
+            const maxPosition = keyframes.length > 0 
+                ? Math.max(...keyframes.map(kf => kf.position))
+                : -1;
+            
+            // Prevent adding if current position is not greater than last position
+            if (position <= maxPosition) {
+                alert(`Scroll position must be greater than ${maxPosition}%`);
+                return;
+            }
+            
+            // Always use 0,0,0 as default (relative to original position)
+            keyframes.push({
+                position: position,
+                name: `Position ${keyframes.length + 1}`,
+                posX: 0, 
+                posY: 0, 
+                posZ: 0,
+                rotX: 0, rotY: 0, rotZ: 0
+            });
+            
+            renderKeyframes();
+            
+            // Update button state after adding
+            updateAddPositionButton();
+        };
+
+        // Delete Keyframe
+        window.deleteKeyframe = function(index) {
+            const breakpoint = currentConfig.activeBreakpoint;
+            currentConfig.breakpoints[breakpoint].keyframes.splice(index, 1);
+            renderKeyframes();
+        };
+
+        // Switch Breakpoint
+        window.switchBreakpoint = function(breakpoint) {
+            currentConfig.activeBreakpoint = breakpoint;
+            
+            document.querySelectorAll('.breakpoint-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            const activeTab = document.querySelector(`[data-breakpoint="${breakpoint}"]`);
+            if (activeTab) activeTab.classList.add('active');
+            
+            const title = breakpoint.toUpperCase();
+            document.getElementById('keyframes-title').textContent = `POSITIONS ( ${title} )`;
+
+            renderKeyframes();
+        };
+
+        // Custom Dropdown Functions
+        window.toggleDropdown = function() {
+            const dropdown = document.querySelector('.breakpoint-dropdown-wrapper .dropdown-selected');
+            const options = document.getElementById('dropdown-options');
+            
+            if (dropdown && options) {
+                dropdown.classList.toggle('active');
+                options.classList.toggle('show');
+            }
+        };
+
+        window.selectBreakpoint = function(value, label) {
+            // Update selected text
+            document.getElementById('selected-breakpoint').textContent = label;
+            
+            // Update selected state in options
+            const breakpointOptions = document.querySelectorAll('#dropdown-options .dropdown-option');
+            breakpointOptions.forEach(option => {
+                option.classList.remove('selected');
+            });
+            const selectedOption = document.querySelector(`#dropdown-options [data-value="${value}"]`);
+            if (selectedOption) {
+                selectedOption.classList.add('selected');
+            }
+            
+            // Close dropdown
+            const dropdown = document.querySelector('.breakpoint-dropdown-wrapper .dropdown-selected');
+            const options = document.getElementById('dropdown-options');
+            if (dropdown) dropdown.classList.remove('active');
+            if (options) options.classList.remove('show');
+            
+            // Switch breakpoint
+            switchBreakpoint(value);
+        };
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            // Close breakpoint dropdown
+            const breakpointDropdown = document.querySelector('.breakpoint-dropdown-wrapper .custom-dropdown');
+            if (breakpointDropdown && !breakpointDropdown.contains(event.target)) {
+                const dropdown = document.querySelector('.breakpoint-dropdown-wrapper .dropdown-selected');
+                const options = document.getElementById('dropdown-options');
+                if (dropdown) dropdown.classList.remove('active');
+                if (options) options.classList.remove('show');
+            }
+            
+            // Close object dropdown
+            const objectDropdown = document.getElementById('object-dropdown');
+            if (objectDropdown && !objectDropdown.contains(event.target)) {
+                document.getElementById('object-dropdown-options')?.classList.remove('show');
+            }
+        });
+
+        // Render Keyframes
+        function renderKeyframes() {
+            const breakpoint = currentConfig.activeBreakpoint;
+            const keyframes = currentConfig.breakpoints[breakpoint].keyframes;
+            const maxXRange = currentConfig.breakpoints[breakpoint].maxXRange;
+            const container = document.getElementById('keyframes-container');
+            
+            container.innerHTML = '';
+            
+            keyframes.forEach((keyframe, index) => {
+                const item = document.createElement('div');
+                item.className = 'keyframe-item';
+                item.innerHTML = `
+                    <div class="keyframe-header" onclick="toggleKeyframe(${index})">
+                        <span class="keyframe-percent">${keyframe.position}%</span>
+                        <span class="keyframe-name-display">${keyframe.name}</span>
+                        <button class="keyframe-delete" onclick="event.stopPropagation(); deleteKeyframe(${index})">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div class="keyframe-controls">
+                        <div class="control-section">
+                            <div class="control-label">POSITION</div>
+                            <div class="control-row">
+                                <span class="axis-label axis-x">X</span>
+                                <input type="range" class="axis-slider" min="-${maxXRange}" max="${maxXRange}" step="1" value="${keyframe.posX}" oninput="updateSliderValue(${index}, 'posX', this.value)">
+                                <div class="input-with-unit">
+                                    <input type="number" class="axis-input" value="${keyframe.posX}" step="1" onchange="updateKeyframeParam(${index}, 'posX', this.value)">
+                                    <span class="input-unit">px</span>
+                                </div>
+                            </div>
+                            <div class="control-row">
+                                <span class="axis-label axis-y">Y</span>
+                                <input type="range" class="axis-slider" min="-${maxXRange}" max="${maxXRange}" step="1" value="${keyframe.posY}" oninput="updateSliderValue(${index}, 'posY', this.value)">
+                                <div class="input-with-unit">
+                                    <input type="number" class="axis-input" value="${keyframe.posY}" step="1" onchange="updateKeyframeParam(${index}, 'posY', this.value)">
+                                    <span class="input-unit">px</span>
+                                </div>
+                            </div>
+                            <div class="control-row">
+                                <span class="axis-label axis-z">Z</span>
+                                <input type="range" class="axis-slider" min="-${maxXRange}" max="${maxXRange}" step="1" value="${keyframe.posZ}" oninput="updateSliderValue(${index}, 'posZ', this.value)">
+                                <div class="input-with-unit">
+                                    <input type="number" class="axis-input" value="${keyframe.posZ}" step="1" onchange="updateKeyframeParam(${index}, 'posZ', this.value)">
+                                    <span class="input-unit">px</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="control-section">
+                            <div class="control-label">ROTATION</div>
+                            <div class="control-row">
+                                <span class="axis-label axis-x">X</span>
+                                <input type="range" class="axis-slider" min="-270" max="270" step="1" value="${keyframe.rotX}" oninput="updateSliderValue(${index}, 'rotX', this.value)">
+                                <input type="number" class="axis-input" value="${keyframe.rotX}" step="1" onchange="updateKeyframeParam(${index}, 'rotX', this.value)">
+                            </div>
+                            <div class="control-row">
+                                <span class="axis-label axis-y">Y</span>
+                                <input type="range" class="axis-slider" min="-270" max="270" step="1" value="${keyframe.rotY}" oninput="updateSliderValue(${index}, 'rotY', this.value)">
+                                <input type="number" class="axis-input" value="${keyframe.rotY}" step="1" onchange="updateKeyframeParam(${index}, 'rotY', this.value)">
+                            </div>
+                            <div class="control-row">
+                                <span class="axis-label axis-z">Z</span>
+                                <input type="range" class="axis-slider" min="-270" max="270" step="1" value="${keyframe.rotZ}" oninput="updateSliderValue(${index}, 'rotZ', this.value)">
+                                <input type="number" class="axis-input" value="${keyframe.rotZ}" step="1" onchange="updateKeyframeParam(${index}, 'rotZ', this.value)">
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+            
+            // Update Add Position button state after rendering
+            updateAddPositionButton();
+        }
+
+        // Toggle Keyframe
+        window.toggleKeyframe = function(index) {
+            const items = document.querySelectorAll('.keyframe-item');
+            items.forEach((item, i) => {
+                if (i !== index) item.classList.remove('expanded');
+            });
+            items[index]?.classList.toggle('expanded');
+        };
+
+        // Update Slider Value
+        window.updateSliderValue = function(index, param, value) {
+            const breakpoint = currentConfig.activeBreakpoint;
+            currentConfig.breakpoints[breakpoint].keyframes[index][param] = parseFloat(value);
+            
+            const keyframeItems = document.querySelectorAll('.keyframe-item');
+            if (keyframeItems[index]) {
+                const inputField = keyframeItems[index].querySelector(`input.axis-input[onchange*="${param}"]`);
+                if (inputField) inputField.value = value;
+            }
+            
+            // Apply transformation directly to the object
+            applyDirectTransformation(index);
+        };
+
+        // Update Keyframe Param
+        window.updateKeyframeParam = function(index, param, value) {
+            const breakpoint = currentConfig.activeBreakpoint;
+            currentConfig.breakpoints[breakpoint].keyframes[index][param] = parseFloat(value);
+            
+            // Apply transformation directly to the object
+            applyDirectTransformation(index);
+        };
+        
+        // Apply transformation directly from a specific keyframe (no interpolation)
+        function applyDirectTransformation(keyframeIndex) {
+            if (!splineApp || !currentConfig.targetObject) return;
+            
+            const breakpoint = currentConfig.activeBreakpoint;
+            const keyframe = currentConfig.breakpoints[breakpoint].keyframes[keyframeIndex];
+            
+            if (!keyframe) return;
+            
+            // Find the target object in Spline
+            let targetObj = null;
+            try {
+                targetObj = splineApp.findObjectByName(currentConfig.targetObject);
+            } catch(e) {
+                console.error('Object not found:', currentConfig.targetObject);
+                return;
+            }
+            
+            if (!targetObj) return;
+            
+            // Get original position (use current position as fallback)
+            const origin = currentConfig.originalPosition || { x: 0, y: 0, z: 0 };
+            
+            // Apply position as offset from original position
+            targetObj.position.set(
+                origin.x + keyframe.posX,  // X: horizontal (left/right)
+                origin.y + keyframe.posY,  // Y: vertical (up/down)
+                origin.z + keyframe.posZ   // Z: depth (forward/back)
+            );
+            
+            // Apply rotation directly (convert degrees to radians)
+            targetObj.rotation.set(
+                keyframe.rotX * Math.PI / 180,
+                keyframe.rotY * Math.PI / 180,
+                keyframe.rotZ * Math.PI / 180
+            );
+        }
+
+        // Load Spline Scene
+        window.loadSplineScene = async function() {
+            let url = document.getElementById('spline-url').value.trim();
+            if (!url) {
+                alert('Please enter a Spline URL');
+                return;
+            }
+
+            // Handle different URL formats
+            if (!url.startsWith('http')) {
+                url = 'https://prod.spline.design/' + url;
+            }
+            
+            // Convert share URL to splinecode URL if needed
+            // Format: https://prod.spline.design/XXXXX -> https://prod.spline.design/XXXXX/scene.splinecode
+            if (url.includes('prod.spline.design') && !url.endsWith('.splinecode')) {
+                // Remove trailing slash if exists
+                url = url.replace(/\/$/, '');
+                // Add /scene.splinecode
+                url = url + '/scene.splinecode';
+            }
+            
+            document.getElementById('spline-url').value = url;
+
+            try {
+                updateSceneStatus('loading', 'Loading scene');
+                
+                if (splineApp) splineApp = null;
+                
+                const container = document.getElementById('canvas-container');
+                // Remove only the canvas, keep the loader
+                const existingCanvas = container.querySelector('canvas');
+                if (existingCanvas) existingCanvas.remove();
+                
+                const newCanvas = document.createElement('canvas');
+                newCanvas.id = 'canvas3d';
+                newCanvas.style.cssText = 'width:100%;height:100%;display:block;background:transparent;';
+                container.insertBefore(newCanvas, container.firstChild);
+
+                splineApp = new Application(newCanvas);
+                await splineApp.load(url);
+                
+                newCanvas.style.pointerEvents = 'none';
+                
+                currentConfig.splineUrl = url;
+                updateSceneStatus('success', 'Scene loaded successfully!');
+                
+                setTimeout(findAndDisplaySceneObjects, 500);
+                
+            } catch (error) {
+                console.error('Error loading scene:', error);
+                updateSceneStatus('error', 'Failed to load scene');
+            }
+        };
+        
+        function updateSceneStatus(type, message) {
+            const statusMsg = document.getElementById('status-message');
+            if (!statusMsg) return;
+            
+            statusMsg.className = 'status-message ' + type;
+            const textSpan = statusMsg.querySelector('span');
+            
+            if (type === 'loading') {
+                // Add animated dots for loading state
+                if (textSpan) {
+                    textSpan.innerHTML = message + '<span class="loading-dots"><span></span><span></span><span></span></span>';
+                }
+            } else {
+                // Regular text for other states
+                if (textSpan) textSpan.textContent = message;
+            }
+        }
+        
+        function findAndDisplaySceneObjects() {
+            if (!splineApp) return;
+            
+            let foundObjects = [];
+            
+            // Get all first-level children (direct children of the scene)
+            if (splineApp._scene && splineApp._scene.children) {
+                console.log('Searching for objects in scene structure...');
+                console.log('Scene children count:', splineApp._scene.children.length);
+                
+                splineApp._scene.children.forEach(child => {
+                    console.log(`First-level: ${child.name} (type: ${child.type || 'Unknown'}, children: ${child.children?.length || 0})`);
+                    
+                    // Check if this is a meaningful object (not camera, light, or default scene)
+                    const isSystemObject = !child.name || 
+                                          child.name === '' || 
+                                          child.name === 'Scene' || 
+                                          child.name === 'Scene 1' ||
+                                          child.name.toLowerCase().includes('camera') ||
+                                          child.name.toLowerCase().includes('light') ||
+                                          child.name.toLowerCase().includes('invisible') ||
+                                          child.name.toLowerCase().includes('buildin');
+                    
+                    if (!isSystemObject) {
+                        // This is a valid first-level object, add it
+                        console.log(`  ✓ Adding first-level object: ${child.name}`);
+                        foundObjects.push({ 
+                            name: child.name, 
+                            type: child.type || 'Object', 
+                            obj: child 
+                        });
+                    }
+                    
+                    // Also check children of this group (second level)
+                    if (child.children && child.children.length > 0) {
+                        child.children.forEach(grandchild => {
+                            console.log(`  Second-level: ${grandchild.name} (type: ${grandchild.type || 'Unknown'})`);
+                            
+                            const isGrandchildSystemObject = !grandchild.name || 
+                                                             grandchild.name === '' || 
+                                                             grandchild.name === 'Scene' || 
+                                                             grandchild.name === 'Scene 1' ||
+                                                             grandchild.name.toLowerCase().includes('camera') ||
+                                                             grandchild.name.toLowerCase().includes('light') ||
+                                                             grandchild.name.toLowerCase().includes('invisible') ||
+                                                             grandchild.name.toLowerCase().includes('buildin');
+                            
+                            if (!isGrandchildSystemObject) {
+                                console.log(`    ✓ Adding second-level object: ${grandchild.name}`);
+                                foundObjects.push({ 
+                                    name: grandchild.name, 
+                                    type: grandchild.type || 'Object', 
+                                    obj: grandchild 
+                                });
+                            }
+                        });
+                    }
+                });
+                
+                console.log(`Found ${foundObjects.length} objects total:`, foundObjects.map(o => o.name));
+            }
+            
+            if (foundObjects.length > 0) {
+                displayObjectsList(foundObjects);
+            } else {
+                console.warn('No product objects found in the scene. Showing all named objects...');
+                // Fallback: show all named objects if no CBD products found
+                if (splineApp._scene && splineApp._scene.children) {
+                    splineApp._scene.children.forEach(child => {
+                        if (child.name && child.name !== '' && child.name !== 'Scene') {
+                            foundObjects.push({ 
+                                name: child.name, 
+                                type: child.type || 'Object', 
+                                obj: child 
+                            });
+                        }
+                    });
+                    if (foundObjects.length > 0) {
+                        displayObjectsList(foundObjects);
+                    }
+                }
+            }
+        }
+        
+        function displayObjectsList(objects) {
+            const selectorSection = document.getElementById('object-selector-section');
+            const dropdownOptions = document.getElementById('object-dropdown-options');
+            const selectedObjectSpan = document.getElementById('selected-object');
+            
+            // Store all objects globally
+            allSceneObjects = objects;
+            
+            selectorSection.style.display = 'block';
+            dropdownOptions.innerHTML = '';
+            
+            // Add placeholder option at the top
+            const placeholderOption = document.createElement('div');
+            placeholderOption.className = 'dropdown-option dropdown-placeholder';
+            placeholderOption.setAttribute('data-value', '');
+            placeholderOption.textContent = 'Select object...';
+            placeholderOption.onclick = () => {
+                // Reset selection and show all objects
+                selectedObjectSpan.textContent = 'Select object...';
+                currentConfig.targetObject = null;
+                document.querySelectorAll('#object-dropdown-options .dropdown-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                placeholderOption.classList.add('selected');
+                showAllObjects();
+                document.getElementById('object-dropdown-options').classList.remove('show');
+            };
+            placeholderOption.classList.add('selected');
+            dropdownOptions.appendChild(placeholderOption);
+            
+            // Add actual objects
+            objects.forEach((obj, index) => {
+                const option = document.createElement('div');
+                option.className = 'dropdown-option';
+                option.setAttribute('data-value', obj.name);
+                option.textContent = `${obj.name} (${obj.type})`;
+                option.onclick = () => selectTargetObject(obj.name, `${obj.name} (${obj.type})`);
+                
+                dropdownOptions.appendChild(option);
+            });
+            
+            // Keep the placeholder text visible by default
+            selectedObjectSpan.textContent = 'Select object...';
+            currentConfig.targetObject = null;
+        }
+
+        window.toggleObjectDropdown = function() {
+            const dropdown = document.getElementById('object-dropdown-options');
+            const allDropdowns = document.querySelectorAll('.dropdown-options');
+            
+            // Close other dropdowns first
+            allDropdowns.forEach(d => {
+                if (d !== dropdown) d.classList.remove('show');
+            });
+            
+            dropdown.classList.toggle('show');
+        };
+
+        window.selectTargetObject = function(objectName, displayText) {
+            currentConfig.targetObject = objectName;
+            
+            // Update selected text
+            document.getElementById('selected-object').textContent = displayText;
+            
+            // Update selected state in dropdown
+            const options = document.querySelectorAll('#object-dropdown-options .dropdown-option');
+            options.forEach(opt => {
+                if (opt.getAttribute('data-value') === objectName) {
+                    opt.classList.add('selected');
+                } else {
+                    opt.classList.remove('selected');
+                }
+            });
+            
+            // Close dropdown
+            document.getElementById('object-dropdown-options').classList.remove('show');
+            
+            // Store original object position
+            if (objectName !== 'placeholder' && splineApp) {
+                try {
+                    const targetObj = splineApp.findObjectByName(objectName);
+                    if (targetObj) {
+                        currentConfig.originalPosition = {
+                            x: targetObj.position.x,
+                            y: targetObj.position.y,
+                            z: targetObj.position.z
+                        };
+                        console.log('Stored original position:', currentConfig.originalPosition);
+                    }
+                } catch(e) {
+                    console.error('Error storing original position:', e);
+                }
+            }
+            
+            // Hide all other objects
+            hideOtherObjects(objectName);
+            
+            console.log('Selected target object:', objectName);
+        };
+
+        // Function to hide all objects except the selected one
+        function hideOtherObjects(selectedObjectName) {
+            if (!splineApp || allSceneObjects.length === 0) {
+                console.warn('Cannot hide objects: splineApp or allSceneObjects not ready');
+                return;
+            }
+            
+            console.log('=== Hiding other objects, showing only:', selectedObjectName, '===');
+            console.log('Total objects to process:', allSceneObjects.length);
+            console.log('All scene objects:', allSceneObjects.map(o => o.name));
+            
+            allSceneObjects.forEach(objData => {
+                const shouldBeVisible = objData.name === selectedObjectName;
+                
+                console.log(`Processing: ${objData.name}, Should be visible: ${shouldBeVisible}`);
+                
+                try {
+                    // Method 1: Try using splineApp.findObjectByName
+                    let targetObj = null;
+                    try {
+                        targetObj = splineApp.findObjectByName(objData.name);
+                        if (targetObj) {
+                            console.log(`  Found via findObjectByName: ${objData.name}`);
+                        }
+                    } catch (e) {
+                        console.log(`  findObjectByName failed for ${objData.name}:`, e.message);
+                    }
+                    
+                    // Method 2: Use the stored object reference
+                    const obj = targetObj || objData.obj;
+                    
+                    if (!obj) {
+                        console.error(`  No object reference for ${objData.name}`);
+                        return;
+                    }
+                    
+                    // Set visibility recursively on object and all children
+                    function setVisibilityRecursive(node, visible, depth = 0) {
+                        if (!node || depth > 10) return;
+                        
+                        const indent = '  '.repeat(depth + 1);
+                        
+                        // Set visibility
+                        node.visible = visible;
+                        console.log(`${indent}├─ ${node.name || 'unnamed'}: visible = ${visible}`);
+                        
+                        // Recursively set for all children
+                        if (node.children && node.children.length > 0) {
+                            node.children.forEach(child => {
+                                setVisibilityRecursive(child, visible, depth + 1);
+                            });
+                        }
+                    }
+                    
+                    setVisibilityRecursive(obj, shouldBeVisible, 0);
+                    
+                    console.log(`✓ ${shouldBeVisible ? 'Showing' : 'Hiding'}: ${objData.name}`);
+                    
+                } catch (e) {
+                    console.error(`✗ Error setting visibility for ${objData.name}:`, e);
+                }
+            });
+            
+            // Force a render update - try multiple methods
+            try {
+                if (splineApp.emitEvent) {
+                    splineApp.emitEvent('update');
+                }
+                if (splineApp.emitEvent) {
+                    splineApp.emitEvent('render');
+                }
+                // Force re-render by updating canvas
+                if (splineApp._runtime && splineApp._runtime._renderer) {
+                    splineApp._runtime._renderer.render();
+                }
+            } catch (e) {
+                console.log('Render update attempt:', e.message);
+            }
+            
+            console.log('=== Visibility update complete ===');
+        }
+
+        // Function to show all objects (used when "Select object..." is chosen)
+        function showAllObjects() {
+            if (!splineApp || allSceneObjects.length === 0) {
+                console.warn('Cannot show all objects: splineApp or allSceneObjects not ready');
+                return;
+            }
+            
+            console.log('=== Showing all objects ===');
+            
+            allSceneObjects.forEach(objData => {
+                try {
+                    // Try using splineApp.findObjectByName first
+                    let targetObj = null;
+                    try {
+                        targetObj = splineApp.findObjectByName(objData.name);
+                    } catch (e) {
+                        // Fallback to stored reference
+                    }
+                    
+                    const obj = targetObj || objData.obj;
+                    
+                    if (!obj) {
+                        console.error(`  No object reference for ${objData.name}`);
+                        return;
+                    }
+                    
+                    // Set visibility recursively
+                    function setVisibilityRecursive(node, depth = 0) {
+                        if (!node || depth > 10) return;
+                        
+                        node.visible = true;
+                        
+                        if (node.children && node.children.length > 0) {
+                            node.children.forEach(child => setVisibilityRecursive(child, depth + 1));
+                        }
+                    }
+                    
+                    setVisibilityRecursive(obj, 0);
+                    console.log(`✓ Showing: ${objData.name}`);
+                    
+                } catch (error) {
+                    console.error(`✗ Error showing ${objData.name}:`, error);
+                }
+            });
+            
+            // Force a render update
+            try {
+                if (splineApp.emitEvent) {
+                    splineApp.emitEvent('update');
+                    splineApp.emitEvent('render');
+                }
+                if (splineApp._runtime && splineApp._runtime._renderer) {
+                    splineApp._runtime._renderer.render();
+                }
+            } catch (e) {
+                console.log('Render update attempt:', e.message);
+            }
+            
+            console.log('=== All objects shown ===');
+        }
+
+        // Apply transformation to object based on keyframes and scroll position
+        // This is ONLY used when Live Preview is ON to show scroll-based animation
+        function applyTransformation() {
+            if (!splineApp || !currentConfig.targetObject) return;
+            
+            const scrollPos = currentConfig.scrollPosition;
+            const breakpoint = currentConfig.activeBreakpoint;
+            const keyframes = currentConfig.breakpoints[breakpoint].keyframes;
+            
+            if (keyframes.length === 0) return;
+            
+            // Find the target object in Spline
+            let targetObj = null;
+            try {
+                targetObj = splineApp.findObjectByName(currentConfig.targetObject);
+            } catch(e) {
+                console.error('Object not found:', currentConfig.targetObject);
+                return;
+            }
+            
+            if (!targetObj) return;
+            
+            // Sort keyframes by position
+            const sorted = [...keyframes].sort((a, b) => a.position - b.position);
+            
+            // Find previous and next keyframes
+            let prev = sorted[0];
+            let next = sorted[0];
+            
+            for (let i = 0; i < sorted.length; i++) {
+                if (sorted[i].position <= scrollPos) {
+                    prev = sorted[i];
+                }
+                if (sorted[i].position >= scrollPos) {
+                    next = sorted[i];
+                    break;
+                }
+            }
+            
+            // Calculate interpolation factor
+            let t = 0;
+            if (prev !== next && next.position !== prev.position) {
+                t = (scrollPos - prev.position) / (next.position - prev.position);
+            } else if (scrollPos >= next.position) {
+                t = 1;
+            }
+            
+            // Clamp t between 0 and 1
+            t = Math.max(0, Math.min(1, t));
+            
+            // Linear interpolation
+            const lerp = (a, b) => a + (b - a) * t;
+            
+            // Get original position (use current position as fallback)
+            const origin = currentConfig.originalPosition || { x: 0, y: 0, z: 0 };
+            
+            // Apply position as offset from original position
+            targetObj.position.set(
+                origin.x + lerp(prev.posX, next.posX),  // X: horizontal (left/right)
+                origin.y + lerp(prev.posY, next.posY),  // Y: vertical (up/down)
+                origin.z + lerp(prev.posZ, next.posZ)   // Z: depth (forward/back)
+            );
+            
+            // Apply rotation (convert degrees to radians)
+            targetObj.rotation.set(
+                lerp(prev.rotX, next.rotX) * Math.PI / 180,
+                lerp(prev.rotY, next.rotY) * Math.PI / 180,
+                lerp(prev.rotZ, next.rotZ) * Math.PI / 180
+            );
+        }
+
+        window.setBackgroundMode = function(mode) {
+            currentConfig.backgroundMode = mode;
+            
+            document.querySelectorAll('.bg-toggle button').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.getElementById('bg-color-section').style.display = mode === 'color' ? 'flex' : 'none';
+            document.getElementById('bg-picture-section').style.display = mode === 'picture' ? 'flex' : 'none';
+            
+            // Apply the appropriate background
+            if (mode === 'color') {
+                document.body.style.backgroundImage = 'none';
+                document.body.style.background = currentConfig.backgroundColor || '#0a0a0f';
+                // Add scrollable class for color mode with default height
+                document.documentElement.classList.add('scrollable');
+                document.body.classList.add('scrollable');
+                document.body.style.minHeight = '6000px';
+            } else if (mode === 'picture') {
+                if (currentConfig.backgroundImage) {
+                    document.body.style.backgroundImage = `url(${currentConfig.backgroundImage})`;
+                    document.body.style.backgroundSize = 'contain';
+                    document.body.style.backgroundPosition = 'center top';
+                    document.body.style.backgroundRepeat = 'no-repeat';
+                    document.body.style.backgroundAttachment = 'scroll';
+                }
+                // Add scrollable class for picture mode
+                document.documentElement.classList.add('scrollable');
+                document.body.classList.add('scrollable');
+                document.body.style.minHeight = '800vh';
+            }
+        };
+
+        // Background color input - update preview as user types
+        document.getElementById('bg-color-hex').addEventListener('input', (e) => {
+            const value = e.target.value;
+            // Only update preview if it's a valid hex color
+            if (/^#[0-9A-Fa-f]{6}$/.test(value) || /^#[0-9A-Fa-f]{3}$/.test(value)) {
+                document.getElementById('color-preview').style.background = value;
+            }
+        });
+
+        // Apply background color
+        window.applyBackgroundColor = function() {
+            const colorInput = document.getElementById('bg-color-hex');
+            let colorValue = colorInput.value.trim();
+            
+            // Add # if missing
+            if (!colorValue.startsWith('#')) {
+                colorValue = '#' + colorValue;
+                colorInput.value = colorValue;
+            }
+            
+            // Validate hex color
+            if (/^#[0-9A-Fa-f]{6}$/.test(colorValue) || /^#[0-9A-Fa-f]{3}$/.test(colorValue)) {
+                currentConfig.backgroundColor = colorValue;
+                document.body.style.background = colorValue;
+                document.getElementById('color-preview').style.background = colorValue;
+                
+                // Show success feedback
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✓ Applied';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 1000);
+            } else {
+                // Show error feedback
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Invalid';
+                btn.style.background = '#ff4d6d';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '';
+                }, 1000);
+            }
+        };
+
+        // Background image handling
+        let pendingBackgroundImage = null;
+
+        // Function to trigger file selection
+        window.selectBackgroundImage = function() {
+            const btn = document.getElementById('bg-picture-btn');
+            if (btn.textContent === 'Select') {
+                // Open file picker
+                document.getElementById('bg-picture').click();
+            } else {
+                // Apply the selected image
+                applyBackgroundImage();
+            }
+        };
+
+        // Function to apply the background image
+        window.applyBackgroundImage = function() {
+            if (pendingBackgroundImage) {
+                currentConfig.backgroundImage = pendingBackgroundImage;
+                // Apply the background image
+                document.body.style.backgroundImage = `url(${pendingBackgroundImage})`;
+                document.body.style.backgroundSize = 'contain';
+                document.body.style.backgroundPosition = 'center top';
+                document.body.style.backgroundRepeat = 'no-repeat';
+                document.body.style.backgroundAttachment = 'scroll';
+                // Enable scrolling for picture background
+                document.documentElement.classList.add('scrollable');
+                document.body.classList.add('scrollable');
+                
+                // Reset button back to "Select" state
+                const btn = document.getElementById('bg-picture-btn');
+                btn.textContent = 'Select';
+                pendingBackgroundImage = null;
+            }
+        };
+
+        document.getElementById('bg-picture').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                document.getElementById('bg-picture-name').value = file.name;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    // Store the image data temporarily
+                    pendingBackgroundImage = event.target.result;
+                    // Change button to "Apply"
+                    const btn = document.getElementById('bg-picture-btn');
+                    btn.textContent = 'Apply';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        document.getElementById('config-name').addEventListener('input', (e) => {
+            currentConfig.name = e.target.value;
+        });
+
+        // Update scroll position indicator when scrolling
+        window.addEventListener('scroll', () => {
+            if (scrollSlider && scrollValue && document.body.classList.contains('scrollable')) {
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+                const scrollPercent = docHeight > 0 ? Math.round((scrollTop / docHeight) * 100) : 0;
+                
+                scrollSlider.value = scrollPercent;
+                scrollValue.value = scrollPercent;
+                currentConfig.scrollPosition = scrollPercent;
+                
+                // Apply transformation if live preview is on
+                if (currentConfig.livePreview) {
+                    applyTransformation();
+                }
+            }
+        });
+
+        window.saveToDrive = function() {
+            console.log('Saving to Google Drive:', currentConfig);
+            showToast('Configuration saved!');
+        };
+
+        window.openDownloadModal = function() {
+            document.getElementById('download-modal').classList.add('show');
+        };
+
+        window.closeDownloadModal = function() {
+            document.getElementById('download-modal').classList.remove('show');
+        };
+
+        window.copyJSON = function() {
+            const jsonStr = JSON.stringify(currentConfig, null, 2);
+            navigator.clipboard.writeText(jsonStr).then(() => {
+                showToast('JSON copied to clipboard!');
+                closeDownloadModal();
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                showToast('Failed to copy JSON');
+            });
+        };
+
+        window.copyCSS = function() {
+            const breakpoint = document.getElementById('css-breakpoint-select').value;
+            const positions = currentConfig.breakpoints[breakpoint].positions;
+            
+            if (!positions || positions.length === 0) {
+                showToast('No positions defined for this breakpoint');
+                return;
+            }
+
+            // Generate CSS code
+            let cssCode = `/* ${currentConfig.name} - ${breakpoint} breakpoint */\n\n`;
+            
+            positions.forEach((pos, index) => {
+                const scrollPercent = pos.scrollPosition;
+                cssCode += `/* Position ${index + 1} at ${scrollPercent}% scroll */\n`;
+                cssCode += `.target-object-${index + 1} {\n`;
+                cssCode += `  transform: \n`;
+                cssCode += `    translateX(${pos.x}px)\n`;
+                cssCode += `    translateY(${pos.y}px)\n`;
+                cssCode += `    translateZ(${pos.z}px)\n`;
+                cssCode += `    rotateX(${pos.rotationX}deg)\n`;
+                cssCode += `    rotateY(${pos.rotationY}deg)\n`;
+                cssCode += `    rotateZ(${pos.rotationZ}deg);\n`;
+                cssCode += `}\n\n`;
+            });
+
+            navigator.clipboard.writeText(cssCode).then(() => {
+                showToast('CSS copied to clipboard!');
+                closeDownloadModal();
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                showToast('Failed to copy CSS');
+            });
+        };
+
+        window.handleSignOut = function() {
+            if (confirm('Are you sure you want to sign out?')) {
+                window.location.href = 'spline-configs.html';
+            }
+        };
+
+        window.toggleSidebar = function() {
+            document.getElementById('sidebar').classList.toggle('minimized');
+            document.getElementById('show-sidebar-btn').classList.toggle('visible');
+        };
+
+        window.handleBack = function() {
+            document.getElementById('save-modal').classList.add('show');
+        };
+
+        window.closeSaveModal = function() {
+            document.getElementById('save-modal').classList.remove('show');
+        };
+
+        window.leaveWithoutSaving = function() {
+            window.location.href = 'spline-configs.html';
+        };
+
+        window.saveAndLeave = function() {
+            saveToDrive();
+            setTimeout(() => window.location.href = 'spline-configs.html', 1000);
+        };
+
+        window.openBreakpointSettings = function() {
+            document.getElementById('bp-monitor').value = currentConfig.breakpoints.monitor.minWidth;
+            document.getElementById('bp-monitor-x').value = currentConfig.breakpoints.monitor.maxXRange;
+            document.getElementById('bp-desktop').value = currentConfig.breakpoints.desktop.minWidth;
+            document.getElementById('bp-desktop-x').value = currentConfig.breakpoints.desktop.maxXRange;
+            document.getElementById('bp-laptop').value = currentConfig.breakpoints.laptop.minWidth;
+            document.getElementById('bp-laptop-x').value = currentConfig.breakpoints.laptop.maxXRange;
+            document.getElementById('bp-tablet').value = currentConfig.breakpoints.tablet.minWidth;
+            document.getElementById('bp-tablet-x').value = currentConfig.breakpoints.tablet.maxXRange;
+            document.getElementById('bp-mobile').value = currentConfig.breakpoints.mobile.minWidth;
+            document.getElementById('bp-mobile-x').value = currentConfig.breakpoints.mobile.maxXRange;
+            
+            document.getElementById('breakpoint-modal').classList.add('show');
+        };
+
+        window.closeBreakpointModal = function() {
+            document.getElementById('breakpoint-modal').classList.remove('show');
+        };
+
+        window.saveBreakpointSettings = function() {
+            currentConfig.breakpoints.monitor.minWidth = parseInt(document.getElementById('bp-monitor').value);
+            currentConfig.breakpoints.monitor.maxXRange = parseInt(document.getElementById('bp-monitor-x').value);
+            currentConfig.breakpoints.desktop.minWidth = parseInt(document.getElementById('bp-desktop').value);
+            currentConfig.breakpoints.desktop.maxXRange = parseInt(document.getElementById('bp-desktop-x').value);
+            currentConfig.breakpoints.laptop.minWidth = parseInt(document.getElementById('bp-laptop').value);
+            currentConfig.breakpoints.laptop.maxXRange = parseInt(document.getElementById('bp-laptop-x').value);
+            currentConfig.breakpoints.tablet.minWidth = parseInt(document.getElementById('bp-tablet').value);
+            currentConfig.breakpoints.tablet.maxXRange = parseInt(document.getElementById('bp-tablet-x').value);
+            currentConfig.breakpoints.mobile.minWidth = parseInt(document.getElementById('bp-mobile').value);
+            currentConfig.breakpoints.mobile.maxXRange = parseInt(document.getElementById('bp-mobile-x').value);
+            
+            closeBreakpointModal();
+            showToast('Breakpoint settings saved!');
+        };
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeBreakpointModal();
+                closeSaveModal();
+            }
+        });
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+        
+        // Initialize button state on page load
+        updateAddPositionButton();
+    </script>
+</body>
+</html>
+
