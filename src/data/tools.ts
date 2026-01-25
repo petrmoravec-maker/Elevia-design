@@ -30,6 +30,15 @@ export const TOOLS: Tool[] = [
     color: '#ec4899', // Pink
   },
   {
+    id: '3d-config',
+    name: '3D Config Tool',
+    description: 'Configure Spline 3D objects with scroll-based keyframe animations',
+    icon: '🎮',
+    status: 'active',
+    route: '/3d-config',
+    color: '#00d4e8', // Cyan
+  },
+  {
     id: '3d-viewer',
     name: '3D Viewer',
     description: 'Visualize designs in 3D',

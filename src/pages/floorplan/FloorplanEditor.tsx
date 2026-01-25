@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../../firebase';
+import { ref, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../../firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -12,6 +13,9 @@ import { LayerPanel } from '../../components/floorplan/LayerPanel';
 import { PropertiesPanel } from '../../components/floorplan/PropertiesPanel';
 import { AiCommandBar } from '../../components/floorplan/AiCommandBar';
 import { StatusBar } from '../../components/floorplan/StatusBar';
+
+// Services
+import { parseDxfFile, type ParsedDxf } from '../../services/dxfParser';
 
 export type EditorTool = 'select' | 'pan' | 'measure' | 'room' | 'equipment' | 'electrical' | 'plumbing';
 
@@ -36,6 +40,8 @@ interface Project {
   name: string;
   scale: string;
   status: string;
+  sourceFile?: string;
+  sourceFileUrl?: string;
 }
 
 const DEFAULT_LAYERS: Layer[] = [
@@ -58,6 +64,8 @@ export function FloorplanEditor() {
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [dxfData, setDxfData] = useState<ParsedDxf | null>(null);
+  const [loadingDxf, setLoadingDxf] = useState(false);
 
   // Editor state
   const [activeTool, setActiveTool] = useState<EditorTool>('select');
@@ -89,12 +97,20 @@ export function FloorplanEditor() {
       const docSnap = await getDoc(docRef);
       
       if (docSnap.exists()) {
+        const data = docSnap.data();
         setProject({
           id: docSnap.id,
-          name: docSnap.data().name,
-          scale: docSnap.data().scale || '1:100',
-          status: docSnap.data().status || 'draft',
+          name: data.name,
+          scale: data.scale || '1:100',
+          status: data.status || 'draft',
+          sourceFile: data.sourceFile,
+          sourceFileUrl: data.sourceFileUrl,
         });
+        
+        // Load DXF file if available
+        if (data.sourceFileUrl && data.sourceFile?.endsWith('.dxf')) {
+          loadDxfFile(data.sourceFileUrl);
+        }
       } else {
         navigate('/floorplan');
       }
@@ -102,6 +118,36 @@ export function FloorplanEditor() {
       console.error('Error loading project:', error);
     } finally {
       setLoading(false);
+    }
+  };
+  
+  const loadDxfFile = async (url: string) => {
+    setLoadingDxf(true);
+    try {
+      console.log('Loading DXF from:', url);
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const file = new File([blob], 'drawing.dxf', { type: 'application/dxf' });
+      
+      const parsed = await parseDxfFile(file);
+      console.log('Parsed DXF:', parsed);
+      setDxfData(parsed);
+      
+      // Update layers from DXF
+      if (parsed.layers.length > 0) {
+        const dxfLayers = parsed.layers.map(l => ({
+          id: l.name,
+          name: l.name,
+          visible: l.visible,
+          locked: false,
+          color: `#${l.color.toString(16).padStart(6, '0')}`,
+        }));
+        setLayers(prev => [...prev, ...dxfLayers.filter(dl => !prev.find(p => p.name === dl.name))]);
+      }
+    } catch (error) {
+      console.error('Error loading DXF:', error);
+    } finally {
+      setLoadingDxf(false);
     }
   };
 
@@ -358,6 +404,19 @@ export function FloorplanEditor() {
 
           {/* Canvas */}
           <div style={styles.canvasWrapper}>
+            {loadingDxf && (
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'rgba(0,0,0,0.5)',
+                zIndex: 10,
+              }}>
+                <div style={{ color: '#fff' }}>Loading DXF file...</div>
+              </div>
+            )}
             <Canvas
               projectId={projectId!}
               activeTool={activeTool}
@@ -366,6 +425,7 @@ export function FloorplanEditor() {
               onCanvasStateChange={setCanvasState}
               selectedElement={selectedElement}
               onSelectElement={setSelectedElement}
+              dxfData={dxfData}
             />
           </div>
 

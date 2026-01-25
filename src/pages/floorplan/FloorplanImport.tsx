@@ -1,12 +1,13 @@
 import { useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { parseDxfFile } from '../../services/dxfParser';
 
-type ImportMethod = 'dwg' | 'pdf' | 'blank';
+type ImportMethod = 'dxf' | 'pdf' | 'blank';
 
 export function FloorplanImport() {
   const { currentUser } = useAuth();
@@ -20,11 +21,24 @@ export function FloorplanImport() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [parsing, setParsing] = useState(false);
   const [error, setError] = useState('');
+  const [dwgWarning, setDwgWarning] = useState(false);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      
+      // Check if DWG file (needs conversion)
+      if (ext === 'dwg') {
+        setDwgWarning(true);
+        setError('DWG files must be converted to DXF first. Please use a free converter.');
+        return;
+      }
+      
+      setDwgWarning(false);
+      setError('');
       setSelectedFile(file);
       if (!projectName) {
         setProjectName(file.name.replace(/\.(dwg|pdf|dxf)$/i, ''));
@@ -37,8 +51,18 @@ export function FloorplanImport() {
     const file = e.dataTransfer.files[0];
     if (file) {
       const ext = file.name.split('.').pop()?.toLowerCase();
-      if ((selectedMethod === 'dwg' && (ext === 'dwg' || ext === 'dxf')) ||
+      
+      // Check if DWG file (needs conversion)
+      if (ext === 'dwg') {
+        setDwgWarning(true);
+        setError('DWG files must be converted to DXF first. Please use a free converter.');
+        return;
+      }
+      
+      if ((selectedMethod === 'dxf' && ext === 'dxf') ||
           (selectedMethod === 'pdf' && ext === 'pdf')) {
+        setDwgWarning(false);
+        setError('');
         setSelectedFile(file);
         if (!projectName) {
           setProjectName(file.name.replace(/\.(dwg|pdf|dxf)$/i, ''));
@@ -61,7 +85,7 @@ export function FloorplanImport() {
 
     try {
       // Create project document
-      const projectData = {
+      const projectData: any = {
         name: projectName.trim(),
         userId: currentUser.uid,
         toolId: 'floorplan',
@@ -76,37 +100,65 @@ export function FloorplanImport() {
       const docRef = await addDoc(collection(db, 'design_projects'), projectData);
       const newProjectId = docRef.id;
 
-      // Upload file if selected
-      if (selectedFile && (selectedMethod === 'dwg' || selectedMethod === 'pdf')) {
-        const ext = selectedFile.name.split('.').pop()?.toLowerCase();
+      // Upload and parse DXF file
+      if (selectedFile && selectedMethod === 'dxf') {
+        setParsing(true);
+        
+        // Parse DXF first to validate
+        console.log('Parsing DXF file...');
+        const parsed = await parseDxfFile(selectedFile);
+        console.log('DXF parsed:', parsed.entities.length, 'entities');
+        
+        // Upload to storage
         const storagePath = `design/${newProjectId}/source/${selectedFile.name}`;
         const storageRef = ref(storage, storagePath);
-        
         await uploadBytes(storageRef, selectedFile);
         const downloadURL = await getDownloadURL(storageRef);
+
+        // Update project with file info
+        await updateDoc(doc(db, 'design_projects', newProjectId), {
+          sourceFile: selectedFile.name,
+          sourceFileUrl: downloadURL,
+          entityCount: parsed.entities.length,
+          layerCount: parsed.layers.length,
+          bounds: parsed.bounds,
+          status: 'imported',
+        });
 
         // Add file record
         await addDoc(collection(db, 'design_projects', newProjectId, 'files'), {
           name: selectedFile.name,
-          type: ext,
+          type: 'dxf',
           storagePath,
           downloadURL,
-          status: selectedMethod === 'dwg' ? 'pending_conversion' : 'pending_analysis',
+          status: 'imported',
+          entityCount: parsed.entities.length,
           uploadedAt: serverTimestamp(),
         });
-
-        // TODO: Trigger conversion/analysis Cloud Function
+        
+        setParsing(false);
       }
 
-      // Navigate to editor or PDF review
-      if (selectedMethod === 'pdf') {
-        navigate(`/floorplan/${newProjectId}?review=true`);
-      } else {
-        navigate(`/floorplan/${newProjectId}`);
+      // Upload PDF file (no parsing, just store)
+      if (selectedFile && selectedMethod === 'pdf') {
+        const storagePath = `design/${newProjectId}/source/${selectedFile.name}`;
+        const storageRef = ref(storage, storagePath);
+        await uploadBytes(storageRef, selectedFile);
+        const downloadURL = await getDownloadURL(storageRef);
+
+        await updateDoc(doc(db, 'design_projects', newProjectId), {
+          sourceFile: selectedFile.name,
+          sourceFileUrl: downloadURL,
+        });
       }
+
+      // Navigate to editor
+      navigate(`/floorplan/${newProjectId}`);
+      
     } catch (err: any) {
       console.error('Error creating project:', err);
       setError(err.message || 'Failed to create project');
+      setParsing(false);
     } finally {
       setUploading(false);
     }
@@ -313,33 +365,56 @@ export function FloorplanImport() {
           <div style={styles.sectionTitle}>Start From</div>
           <div style={styles.methodGrid}>
             <div
-              style={styles.methodCard(selectedMethod === 'dwg')}
-              onClick={() => { setSelectedMethod('dwg'); setSelectedFile(null); }}
+              style={styles.methodCard(selectedMethod === 'dxf')}
+              onClick={() => { setSelectedMethod('dxf'); setSelectedFile(null); setDwgWarning(false); setError(''); }}
             >
-              <div style={styles.methodIcon}>📁</div>
-              <div style={styles.methodTitle}>DWG/DXF File</div>
-              <div style={styles.methodDesc}>Import CAD drawing</div>
+              <div style={styles.methodIcon}>📐</div>
+              <div style={styles.methodTitle}>DXF File</div>
+              <div style={styles.methodDesc}>1:1 CAD import</div>
             </div>
             <div
               style={styles.methodCard(selectedMethod === 'pdf')}
-              onClick={() => { setSelectedMethod('pdf'); setSelectedFile(null); }}
+              onClick={() => { setSelectedMethod('pdf'); setSelectedFile(null); setDwgWarning(false); setError(''); }}
             >
               <div style={styles.methodIcon}>📄</div>
               <div style={styles.methodTitle}>PDF Plan</div>
-              <div style={styles.methodDesc}>AI analyzes & redraws</div>
+              <div style={styles.methodDesc}>Reference overlay</div>
             </div>
             <div
               style={styles.methodCard(selectedMethod === 'blank')}
-              onClick={() => { setSelectedMethod('blank'); setSelectedFile(null); }}
+              onClick={() => { setSelectedMethod('blank'); setSelectedFile(null); setDwgWarning(false); setError(''); }}
             >
               <div style={styles.methodIcon}>✨</div>
               <div style={styles.methodTitle}>Start Blank</div>
-              <div style={styles.methodDesc}>Draw with AI from scratch</div>
+              <div style={styles.methodDesc}>Draw from scratch</div>
             </div>
           </div>
         </div>
 
-        {(selectedMethod === 'dwg' || selectedMethod === 'pdf') && (
+        {/* DWG Warning */}
+        {dwgWarning && (
+          <div style={{
+            padding: '16px',
+            backgroundColor: '#f59e0b15',
+            border: '1px solid #f59e0b30',
+            borderRadius: '8px',
+            marginBottom: '20px',
+          }}>
+            <div style={{ fontWeight: 600, color: '#f59e0b', marginBottom: '8px' }}>
+              DWG files need conversion
+            </div>
+            <div style={{ fontSize: '13px', color: colors.textSecondary, marginBottom: '12px' }}>
+              DWG is a proprietary Autodesk format. Please convert to DXF using one of these free tools:
+            </div>
+            <ul style={{ fontSize: '13px', color: colors.text, margin: 0, paddingLeft: '20px' }}>
+              <li><a href="https://www.opendesign.com/guestfiles/oda_file_converter" target="_blank" style={{ color: colors.accent }}>ODA File Converter</a> (free, Windows/Mac/Linux)</li>
+              <li><a href="https://librecad.org" target="_blank" style={{ color: colors.accent }}>LibreCAD</a> (free, open source)</li>
+              <li><a href="https://web.autocad.com" target="_blank" style={{ color: colors.accent }}>AutoCAD Web</a> (free with Autodesk account)</li>
+            </ul>
+          </div>
+        )}
+
+        {(selectedMethod === 'dxf' || selectedMethod === 'pdf') && (
           <div style={styles.section}>
             <div style={styles.sectionTitle}>Upload File</div>
             <div
@@ -350,26 +425,26 @@ export function FloorplanImport() {
               onClick={() => fileInputRef.current?.click()}
             >
               <div style={styles.dropzoneIcon}>
-                {selectedMethod === 'dwg' ? '📐' : '📄'}
+                {selectedMethod === 'dxf' ? '📐' : '📄'}
               </div>
               <div style={styles.dropzoneText}>
-                Drop your {selectedMethod === 'dwg' ? 'DWG/DXF' : 'PDF'} file here
+                Drop your {selectedMethod === 'dxf' ? 'DXF' : 'PDF'} file here
               </div>
               <div style={styles.dropzoneHint}>
-                or click to browse
+                or click to browse {selectedMethod === 'dxf' && '(.dxf only, convert DWG first)'}
               </div>
             </div>
             <input
               ref={fileInputRef}
               type="file"
-              accept={selectedMethod === 'dwg' ? '.dwg,.dxf' : '.pdf'}
+              accept={selectedMethod === 'dxf' ? '.dxf,.dwg' : '.pdf'}
               onChange={handleFileSelect}
               style={{ display: 'none' }}
             />
             {selectedFile && (
               <div style={styles.selectedFile}>
                 <div style={styles.fileName}>
-                  <span>{selectedMethod === 'dwg' ? '📐' : '📄'}</span>
+                  <span>{selectedMethod === 'dxf' ? '📐' : '📄'}</span>
                   <span>{selectedFile.name}</span>
                   <span style={{ color: colors.textMuted }}>
                     ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
@@ -395,20 +470,55 @@ export function FloorplanImport() {
             fontSize: '13px',
             color: colors.info,
           }}>
-            💡 AI will analyze your PDF and recreate the floor plan. You'll be able to review and adjust before continuing.
+            💡 PDF will be used as a reference overlay. You can trace over it or use AI to help draw.
+          </div>
+        )}
+
+        {selectedMethod === 'dxf' && selectedFile && (
+          <div style={{
+            padding: '16px',
+            backgroundColor: `${colors.accent}15`,
+            border: `1px solid ${colors.accent}30`,
+            borderRadius: '8px',
+            fontSize: '13px',
+            color: colors.accent,
+          }}>
+            ✓ DXF files are imported at 1:1 scale with all layers and geometry preserved.
+          </div>
+        )}
+
+        {parsing && (
+          <div style={{
+            padding: '20px',
+            backgroundColor: colors.bgPanel,
+            border: `1px solid ${colors.accent}`,
+            borderRadius: '8px',
+            textAlign: 'center',
+          }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              border: `3px solid ${colors.border}`,
+              borderTopColor: colors.accent,
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+              margin: '0 auto 16px',
+            }} />
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            <div style={{ color: colors.text, fontWeight: 500 }}>Parsing DXF file...</div>
           </div>
         )}
 
         <div style={styles.actions}>
-          <button style={styles.cancelButton} onClick={() => navigate('/floorplan')}>
+          <button style={styles.cancelButton} onClick={() => navigate('/floorplan')} disabled={uploading || parsing}>
             Cancel
           </button>
           <button
-            style={styles.createButton(!canCreate || uploading)}
-            disabled={!canCreate || uploading}
+            style={styles.createButton(!canCreate || uploading || parsing)}
+            disabled={!canCreate || uploading || parsing}
             onClick={handleCreate}
           >
-            {uploading ? 'Creating...' : selectedMethod === 'pdf' ? 'Create & Analyze' : 'Create Project'}
+            {uploading ? 'Uploading...' : parsing ? 'Parsing...' : selectedMethod === 'dxf' ? 'Import DXF' : 'Create Project'}
           </button>
         </div>
       </div>
