@@ -16,6 +16,7 @@ import { StatusBar } from '../../components/floorplan/StatusBar';
 
 // Services
 import { parseDxfFile, type ParsedDxf } from '../../services/dxfParser';
+import { parseDwgFile } from '../../services/dwgParser';
 
 export type EditorTool = 'select' | 'pan' | 'measure' | 'room' | 'equipment' | 'electrical' | 'plumbing';
 
@@ -107,9 +108,12 @@ export function FloorplanEditor() {
           sourceFileUrl: data.sourceFileUrl,
         });
         
-        // Load DXF file if available
-        if (data.sourceFileUrl && data.sourceFile?.endsWith('.dxf')) {
-          loadDxfFile(data.sourceFileUrl);
+        // Load CAD file if available (DXF or DWG)
+        if (data.sourceFileUrl && data.sourceFile) {
+          const fileName = data.sourceFile.toLowerCase();
+          if (fileName.endsWith('.dxf') || fileName.endsWith('.dwg')) {
+            loadCadFile(data.sourceFileUrl, data.sourceFile);
+          }
         }
       } else {
         navigate('/floorplan');
@@ -121,31 +125,40 @@ export function FloorplanEditor() {
     }
   };
   
-  const loadDxfFile = async (url: string) => {
+  const loadCadFile = async (url: string, fileName: string) => {
     setLoadingDxf(true);
     try {
-      console.log('Loading DXF from:', url);
+      console.log('Loading CAD file from:', url);
       const response = await fetch(url);
       const blob = await response.blob();
-      const file = new File([blob], 'drawing.dxf', { type: 'application/dxf' });
+      const file = new File([blob], fileName, { type: 'application/octet-stream' });
       
-      const parsed = await parseDxfFile(file);
-      console.log('Parsed DXF:', parsed);
+      // Parse based on file extension
+      let parsed: ParsedDxf;
+      if (fileName.toLowerCase().endsWith('.dwg')) {
+        console.log('Parsing as DWG...');
+        parsed = await parseDwgFile(file);
+      } else {
+        console.log('Parsing as DXF...');
+        parsed = await parseDxfFile(file);
+      }
+      
+      console.log('Parsed CAD file:', parsed);
       setDxfData(parsed);
       
-      // Update layers from DXF
+      // Update layers from CAD file
       if (parsed.layers.length > 0) {
-        const dxfLayers = parsed.layers.map(l => ({
+        const cadLayers = parsed.layers.map(l => ({
           id: l.name,
           name: l.name,
           visible: l.visible,
           locked: false,
           color: `#${l.color.toString(16).padStart(6, '0')}`,
         }));
-        setLayers(prev => [...prev, ...dxfLayers.filter(dl => !prev.find(p => p.name === dl.name))]);
+        setLayers(prev => [...prev, ...cadLayers.filter(cl => !prev.find(p => p.name === cl.name))]);
       }
     } catch (error) {
-      console.error('Error loading DXF:', error);
+      console.error('Error loading CAD file:', error);
     } finally {
       setLoadingDxf(false);
     }
