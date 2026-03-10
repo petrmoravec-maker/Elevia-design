@@ -2517,9 +2517,63 @@
         });
 
         window.saveToDrive = function() {
-            console.log('Saving to Google Drive:', currentConfig);
-            showToast('Configuration saved!');
+            if (window.parent !== window) {
+                window.parent.postMessage({
+                    type: 'saveConfig',
+                    configData: JSON.parse(JSON.stringify(currentConfig)),
+                }, '*');
+                showToast('Saving...');
+            } else {
+                showToast('Configuration saved locally!');
+            }
         };
+
+        // ─── PostMessage: Load/Save from parent (Elevia Design) ───
+        window.addEventListener('message', function(event) {
+            if (event.data?.type === 'loadConfig' && event.data.configData) {
+                const cfg = event.data.configData;
+                currentConfig.name = cfg.name || 'Untitled Config';
+                currentConfig.splineUrl = cfg.splineUrl || '';
+                currentConfig.targetObject = cfg.targetObject || null;
+                currentConfig.backgroundColor = cfg.backgroundColor || '#0a0a0f';
+                currentConfig.backgroundMode = cfg.backgroundMode || 'color';
+                currentConfig.backgroundImage = cfg.backgroundImage || null;
+                currentConfig.scrollPosition = cfg.scrollPosition || 0;
+                currentConfig.livePreview = false;
+                currentConfig.activeBreakpoint = cfg.activeBreakpoint || 'monitor';
+
+                if (cfg.breakpoints) {
+                    Object.keys(cfg.breakpoints).forEach(function(bp) {
+                        if (currentConfig.breakpoints[bp]) {
+                            currentConfig.breakpoints[bp].minWidth = cfg.breakpoints[bp].minWidth ?? currentConfig.breakpoints[bp].minWidth;
+                            currentConfig.breakpoints[bp].maxXRange = cfg.breakpoints[bp].maxXRange ?? currentConfig.breakpoints[bp].maxXRange;
+                            currentConfig.breakpoints[bp].keyframes = cfg.breakpoints[bp].keyframes || [];
+                        }
+                    });
+                }
+
+                var nameInput = document.getElementById('config-name');
+                if (nameInput) nameInput.value = currentConfig.name;
+                var urlInput = document.getElementById('spline-url');
+                if (urlInput) urlInput.value = currentConfig.splineUrl;
+
+                renderKeyframes();
+
+                if (currentConfig.splineUrl) {
+                    document.getElementById('spline-url').value = currentConfig.splineUrl;
+                    loadSplineScene();
+                }
+
+                console.log('[3DConfig] Config loaded from parent:', currentConfig.name);
+            }
+
+            if (event.data?.type === 'saveSuccess') {
+                showToast('Configuration saved!');
+            }
+            if (event.data?.type === 'saveError') {
+                showToast('Save failed — please try again');
+            }
+        });
 
         // ─── Download Modal & Code Generation ───
         let downloadActiveTab = 'all';
@@ -2845,12 +2899,20 @@ ${keyframeObjects.join(',\n')}
         };
 
         window.leaveWithoutSaving = function() {
-            window.location.href = 'spline-configs.html';
+            if (window.parent !== window) {
+                window.parent.postMessage({ type: 'navigateBack' }, '*');
+            } else {
+                window.location.href = 'spline-configs.html';
+            }
         };
 
         window.saveAndLeave = function() {
             saveToDrive();
-            setTimeout(() => window.location.href = 'spline-configs.html', 1000);
+            if (window.parent !== window) {
+                setTimeout(() => window.parent.postMessage({ type: 'navigateBack' }, '*'), 1000);
+            } else {
+                setTimeout(() => window.location.href = 'spline-configs.html', 1000);
+            }
         };
 
         window.openBreakpointSettings = function() {
