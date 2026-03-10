@@ -74,47 +74,6 @@
             height: 100% !important;
         }
 
-        /* Object Loading Indicator */
-        .object-loader {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 16px;
-            z-index: 100;
-            pointer-events: none;
-        }
-
-        .object-loader-spinner {
-            width: 48px;
-            height: 48px;
-            border: 3px solid rgba(0, 212, 232, 0.1);
-            border-top: 3px solid var(--accent);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .object-loader-text {
-            color: var(--accent);
-            font-size: 14px;
-            font-weight: 500;
-            text-shadow: 0 2px 8px rgba(0, 212, 232, 0.3);
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
         canvas {
             display: block;
             width: 100%;
@@ -134,7 +93,6 @@
             overflow: auto !important;
             position: relative !important;
             height: auto !important;
-            min-height: 800vh !important;
         }
 
         /* Sidebar Panel */
@@ -200,17 +158,12 @@
 
         /* Header */
         .panel-header {
-            position: sticky;
-            top: 0;
-            background: var(--gradient-surface);
-            backdrop-filter: blur(40px);
-            -webkit-backdrop-filter: blur(40px);
+            background: transparent;
             padding: 24px;
             border-bottom: 1px solid var(--border-subtle);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            z-index: 10;
         }
 
         .header-title {
@@ -252,9 +205,9 @@
             align-items: center;
             gap: 10px;
             padding: 8px 14px;
-            background: transparent;
+            background: var(--bg-glass);
             border-radius: 6px;
-            border: none;
+            border: 1px solid var(--border-subtle);
         }
 
         .live-preview-toggle span {
@@ -283,7 +236,7 @@
             right: 0;
             bottom: 0;
             background: var(--bg-elevated);
-            border-radius: 100px;
+            border-radius: 6px;
             border: 1px solid var(--border-subtle);
             transition: 0.3s;
         }
@@ -420,7 +373,7 @@
             border: none;
             padding: 8px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: color 0.2s;
             display: flex;
             align-items: center;
             border-radius: 8px;
@@ -434,16 +387,6 @@
         .sign-out-btn svg {
             width: 18px;
             height: 18px;
-        }
-
-        .sign-out-btn svg polyline,
-        .sign-out-btn svg line {
-            transition: all 0.2s;
-        }
-
-        .sign-out-btn:hover svg polyline,
-        .sign-out-btn:hover svg line {
-            transform: translateX(3px);
         }
 
         /* Form Section */
@@ -479,8 +422,6 @@
             font-size: 14px;
             font-family: 'Outfit', sans-serif;
             transition: all 0.2s;
-            height: 48px;
-            box-sizing: border-box;
         }
 
         .form-input:focus {
@@ -491,7 +432,6 @@
 
         .form-input::placeholder {
             color: var(--text-muted);
-            font-style: italic;
         }
 
         select.form-input {
@@ -525,8 +465,6 @@
             white-space: nowrap;
             font-family: 'Outfit', sans-serif;
             box-shadow: 0 4px 20px var(--accent-glow);
-            height: 48px;
-            box-sizing: border-box;
         }
 
         .load-btn:hover {
@@ -628,7 +566,7 @@
         .scroll-control {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 14px;
             padding: 16px;
             background: var(--bg-glass);
             border: 1px solid var(--border-subtle);
@@ -664,28 +602,16 @@
         }
 
         .scroll-input {
-            width: 48px;
-            background: transparent;
-            border: none;
+            width: 72px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
             border-radius: 6px;
-            padding: 4px 2px;
+            padding: 10px 12px;
             color: var(--text-primary);
             font-size: 14px;
             font-weight: 600;
-            text-align: right;
+            text-align: center;
             font-family: 'JetBrains Mono', monospace;
-        }
-
-        /* Remove spinner arrows from number inputs */
-        input[type="number"]::-webkit-inner-spin-button,
-        input[type="number"]::-webkit-outer-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        
-        input[type="number"] {
-            -moz-appearance: textfield;
-            appearance: textfield;
         }
 
         .scroll-input:focus {
@@ -707,17 +633,12 @@
             gap: 8px;
             margin-bottom: 18px;
             align-items: center;
-            position: relative;
         }
 
-        .custom-dropdown {
+        .breakpoint-dropdown {
             flex: 1;
-            position: relative;
-        }
-
-        .dropdown-selected {
             background: var(--input-bg);
-            border: 1px solid var(--border-subtle);
+            border: 1px solid var(--input-border);
             color: var(--text-primary);
             padding: 12px 14px;
             border-radius: 6px;
@@ -726,97 +647,33 @@
             cursor: pointer;
             transition: all 0.2s;
             font-family: 'Outfit', sans-serif;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            user-select: none;
+            outline: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2300d4e8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+            padding-right: 40px;
         }
 
-        .dropdown-selected:hover {
+        .breakpoint-dropdown:hover {
             border-color: var(--border-glow);
             background-color: var(--input-bg-hover);
         }
 
-        .dropdown-selected.active {
+        .breakpoint-dropdown:focus {
             border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(0, 212, 232, 0.15);
+            box-shadow: 0 0 0 3px rgba(0, 212, 232, 0.1);
         }
 
-        .dropdown-arrow {
-            transition: transform 0.2s;
-            color: var(--accent);
-        }
-
-        .dropdown-selected.active .dropdown-arrow {
-            transform: rotate(180deg);
-        }
-
-        .dropdown-options {
-            position: absolute;
-            top: calc(100% + 4px);
-            left: 0;
-            right: 0;
+        .breakpoint-dropdown option {
             background: var(--bg-elevated);
-            border: 1px solid var(--border-subtle);
-            border-radius: 6px;
-            overflow: hidden;
-            z-index: 1000;
-            display: none;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-        }
-
-        .dropdown-options.show {
-            display: block;
-        }
-
-        .dropdown-option {
+            color: var(--text-primary);
             padding: 12px 14px;
             font-size: 13px;
             font-weight: 500;
-            color: var(--text-primary);
-            cursor: pointer;
-            transition: all 0.2s;
             font-family: 'Outfit', sans-serif;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 8px;
-        }
-
-        .dropdown-option:hover {
-            background: var(--input-bg-hover);
-            color: var(--accent);
-        }
-
-        .dropdown-option.selected {
-            background: var(--input-bg-hover);
-            color: var(--accent);
-        }
-
-        .dropdown-option.selected::after {
-            content: '';
-            width: 6px;
-            height: 6px;
-            background: var(--accent);
-            border-radius: 50%;
-            box-shadow: 0 0 8px var(--accent-glow);
-        }
-
-        .dropdown-placeholder {
-            color: var(--text-muted);
-            font-style: italic;
-        }
-
-        .dropdown-placeholder:hover {
-            color: var(--text-secondary);
-        }
-
-        .dropdown-placeholder.selected {
-            color: var(--text-muted);
-        }
-
-        .dropdown-placeholder.selected::after {
-            display: none;
+            border-radius: 0;
         }
 
         .breakpoint-dropdown option:hover,
@@ -1012,27 +869,24 @@
             font-weight: 700;
             flex-shrink: 0;
             font-family: 'JetBrains Mono', monospace;
-            background: rgba(0, 212, 232, 0.15);
-            color: var(--accent);
-            border: 1px solid rgba(0, 212, 232, 0.25);
         }
 
         .axis-label.axis-x {
-            background: rgba(0, 212, 232, 0.15);
-            color: var(--accent);
-            border: 1px solid rgba(0, 212, 232, 0.25);
+            background: rgba(255, 77, 109, 0.2);
+            color: #ff4d6d;
+            border: 1px solid rgba(255, 77, 109, 0.3);
         }
 
         .axis-label.axis-y {
-            background: rgba(0, 212, 232, 0.15);
-            color: var(--accent);
-            border: 1px solid rgba(0, 212, 232, 0.25);
+            background: rgba(0, 255, 148, 0.2);
+            color: #00ff94;
+            border: 1px solid rgba(0, 255, 148, 0.3);
         }
 
         .axis-label.axis-z {
-            background: rgba(0, 212, 232, 0.15);
-            color: var(--accent);
-            border: 1px solid rgba(0, 212, 232, 0.25);
+            background: rgba(0, 212, 232, 0.2);
+            color: #00d4e8;
+            border: 1px solid rgba(0, 212, 232, 0.3);
         }
 
         .axis-slider {
@@ -1051,7 +905,7 @@
             appearance: none;
             width: 16px;
             height: 16px;
-            background: var(--accent);
+            background: var(--text-primary);
             border-radius: 50%;
             cursor: grab;
             transition: all 0.2s;
@@ -1062,55 +916,17 @@
             transform: scale(1.2);
         }
 
-        .axis-slider::-moz-range-thumb {
-            width: 16px;
-            height: 16px;
-            background: var(--accent);
-            border: none;
-            border-radius: 50%;
-            cursor: grab;
-            transition: all 0.2s;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-        }
-
-        .axis-slider::-moz-range-thumb:hover {
-            transform: scale(1.2);
-        }
-
         .axis-input {
-            width: 80px;
+            width: 70px;
             background: var(--bg-elevated);
             border: 1px solid var(--border-subtle);
             border-radius: 8px;
-            padding: 8px 8px;
+            padding: 8px 10px;
             color: var(--text-primary);
             font-size: 13px;
             font-weight: 600;
             text-align: center;
             font-family: 'JetBrains Mono', monospace;
-            outline: none;
-            transition: all 0.2s;
-        }
-
-        .input-with-unit {
-            position: relative;
-            display: inline-flex;
-            align-items: center;
-        }
-
-        .input-with-unit .axis-input {
-            padding-right: 24px;
-        }
-
-        .input-unit {
-            position: absolute;
-            right: 8px;
-            font-size: 10px;
-            color: var(--text-muted);
-            font-weight: 500;
-            pointer-events: none;
-            font-family: 'Outfit', sans-serif;
-        }
         }
 
         .axis-input:focus {
@@ -1155,119 +971,33 @@
             color: var(--text-primary);
         }
 
-        .color-input-container {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            min-height: 48px;
-        }
-
-        .picture-upload-container {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            min-height: 48px;
-        }
-
-        .picture-upload-container .color-hex-input {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .color-input-wrapper {
-            flex: 1;
-            position: relative;
-            display: flex;
-            align-items: center;
-            min-width: 0;
-        }
-
-        .color-preview {
-            position: absolute;
-            left: 12px;
-            width: 20px;
-            height: 20px;
-            border-radius: 4px;
-            border: 1px solid var(--border-subtle);
-            pointer-events: none;
-            z-index: 1;
-        }
-
-        .color-hex-input {
-            flex: 1;
+        .color-picker-container {
+            width: 100%;
+            height: 52px;
             background: var(--bg-glass);
             border: 1px solid var(--border-subtle);
             border-radius: 6px;
-            padding: 14px 18px;
-            color: var(--text-primary);
-            font-size: 14px;
-            font-family: 'Outfit', sans-serif;
-            transition: all 0.2s;
-            height: 48px;
-            box-sizing: border-box;
-        }
-
-        /* Add left padding when it has a color preview */
-        .color-input-wrapper .color-hex-input {
-            padding-left: 42px;
-        }
-
-        .color-hex-input:read-only {
-            background: var(--bg-glass);
-            opacity: 1;
-        }
-
-        .color-hex-input:focus {
-            outline: none;
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(0, 212, 232, 0.15);
-        }
-
-        .color-hex-input::placeholder {
-            color: var(--text-muted);
-            font-style: italic;
-        }
-
-        .color-apply-btn {
-            background: var(--gradient-accent);
-            color: var(--bg-deep);
-            border: none;
-            border-radius: 6px;
-            padding: 14px 28px;
-            font-size: 14px;
-            font-weight: 600;
+            overflow: hidden;
             cursor: pointer;
-            transition: all 0.3s;
-            font-family: 'Outfit', sans-serif;
-            white-space: nowrap;
-            box-shadow: 0 4px 20px var(--accent-glow);
-            height: 48px;
-            box-sizing: border-box;
+            transition: all 0.2s;
         }
 
-        .color-apply-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px var(--accent-glow);
+        .color-picker-container:hover {
+            border-color: var(--border-glow);
         }
 
-        .color-apply-btn:active {
-            transform: translateY(1px);
+        .color-picker-container input[type="color"] {
+            width: 100%;
+            height: 100%;
+            border: none;
+            cursor: pointer;
         }
 
-        /* Panel Footer */
-        .panel-footer {
-            position: sticky;
-            bottom: 0;
-            left: 0;
-            right: 0;
+        /* Bottom Actions */
+        .bottom-actions {
             display: flex;
             gap: 12px;
-            padding: 20px 24px;
-            background: var(--gradient-surface);
-            backdrop-filter: blur(40px);
-            -webkit-backdrop-filter: blur(40px);
-            border-top: 1px solid var(--border-subtle);
-            z-index: 10;
+            margin-top: 28px;
         }
 
         .btn-primary {
@@ -1310,16 +1040,6 @@
         .btn-icon:hover {
             border-color: var(--border-glow);
             background: var(--bg-elevated);
-        }
-
-        .btn-icon svg polyline,
-        .btn-icon svg line {
-            transition: all 0.2s;
-        }
-
-        .btn-icon:hover svg polyline,
-        .btn-icon:hover svg line {
-            transform: translateY(3px);
         }
 
         .btn-icon:hover svg {
@@ -1388,6 +1108,11 @@
             max-width: 620px;
         }
 
+        .modal-xlarge {
+            max-width: 860px;
+            max-height: 90vh;
+        }
+
         .modal-header {
             padding: 24px;
             border-bottom: 1px solid var(--border-subtle);
@@ -1437,32 +1162,93 @@
             justify-content: flex-end;
         }
 
-        .download-option {
-            margin-bottom: 24px;
-            padding: 20px;
+        .download-bp-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .download-bp-tab {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            font-family: 'Outfit', sans-serif;
             background: var(--bg-glass);
             border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .download-bp-tab:hover {
+            border-color: var(--border-glow);
+            color: var(--text-primary);
+        }
+        .download-bp-tab.active {
+            background: var(--accent);
+            color: var(--bg-deep);
+            border-color: var(--accent);
+        }
+        .download-bp-tab-all.active {
+            background: linear-gradient(135deg, var(--accent), #4ecdc4);
+        }
+
+        .code-block-wrapper {
+            position: relative;
             border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border-subtle);
         }
-
-        .download-option:last-child {
-            margin-bottom: 0;
-        }
-
-        .download-option .section-label {
+        .code-block-header {
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+            justify-content: space-between;
+            padding: 10px 16px;
+            background: rgba(255,255,255,0.03);
+            border-bottom: 1px solid var(--border-subtle);
         }
-
-        .download-option .section-label svg {
-            stroke: var(--accent);
+        .code-block-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .copy-btn {
+            padding: 6px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: 'Outfit', sans-serif;
+            background: var(--accent);
+            color: var(--bg-deep);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .copy-btn:hover {
+            filter: brightness(1.15);
+        }
+        .code-block-content {
+            background: rgba(0,0,0,0.4);
+            padding: 16px;
+            max-height: 420px;
+            overflow: auto;
+        }
+        .code-block-content pre {
+            margin: 0;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            color: #c9d1d9;
+            white-space: pre;
+            tab-size: 2;
+        }
+        .download-info {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            line-height: 1.5;
         }
 
         .btn {
@@ -1613,11 +1399,6 @@
     <!-- Canvas Container -->
     <div id="canvas-container">
         <canvas id="canvas3d"></canvas>
-        <!-- Object Loading Indicator -->
-        <div class="object-loader" id="object-loader" style="display: none;">
-            <div class="object-loader-spinner"></div>
-            <div class="object-loader-text">Loading object...</div>
-        </div>
     </div>
 
     <!-- Version Badge -->
@@ -1640,10 +1421,8 @@
         <div class="panel-header">
             <div class="header-title">
                 <div class="header-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                        <path d="M2 17l10 5 10-5"/>
-                        <path d="M2 12l10 5 10-5"/>
+                    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
                     </svg>
                 </div>
                 <span>Elevia 3D Config</span>
@@ -1728,28 +1507,6 @@
                 </div>
             </div>
 
-            <!-- Target Object Selection -->
-            <div class="form-section" id="object-selector-section" style="display: none;">
-                <label class="form-label">
-                    <svg class="form-label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="3"/>
-                        <path d="M12 1v6m0 6v10M1 12h6m6 0h10"/>
-                    </svg>
-                    Target Object
-                </label>
-                <div class="custom-dropdown" id="object-dropdown">
-                    <div class="dropdown-selected" onclick="toggleObjectDropdown()">
-                        <span id="selected-object">Select an object...</span>
-                        <svg class="dropdown-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="6 9 12 15 18 9"/>
-                        </svg>
-                    </div>
-                    <div class="dropdown-options" id="object-dropdown-options">
-                        <!-- Options will be populated dynamically -->
-                    </div>
-                </div>
-            </div>
-
             <!-- Scroll Position -->
             <div class="form-section">
                 <label class="form-label">
@@ -1779,21 +1536,13 @@
                 </label>
                 
                 <div class="breakpoint-dropdown-wrapper">
-                    <div class="custom-dropdown">
-                        <div class="dropdown-selected" onclick="toggleDropdown()">
-                            <span id="selected-breakpoint">Tablet</span>
-                            <svg class="dropdown-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="6 9 12 15 18 9"/>
-                            </svg>
-                        </div>
-                        <div class="dropdown-options" id="dropdown-options">
-                            <div class="dropdown-option" data-value="monitor" onclick="selectBreakpoint('monitor', 'Monitor')">Monitor</div>
-                            <div class="dropdown-option" data-value="desktop" onclick="selectBreakpoint('desktop', 'Desktop')">Desktop</div>
-                            <div class="dropdown-option" data-value="laptop" onclick="selectBreakpoint('laptop', 'Laptop')">Laptop</div>
-                            <div class="dropdown-option selected" data-value="tablet" onclick="selectBreakpoint('tablet', 'Tablet')">Tablet</div>
-                            <div class="dropdown-option" data-value="mobile" onclick="selectBreakpoint('mobile', 'Mobile')">Mobile</div>
-                        </div>
-                    </div>
+                    <select class="breakpoint-dropdown" id="breakpoint-dropdown" onchange="switchBreakpoint(this.value)">
+                        <option value="monitor">Monitor</option>
+                        <option value="desktop">Desktop</option>
+                        <option value="laptop">Laptop</option>
+                        <option value="tablet" selected>Tablet</option>
+                        <option value="mobile">Mobile</option>
+                    </select>
                     <button class="breakpoint-settings-icon" onclick="openBreakpointSettings()" title="Edit breakpoint settings">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="3"/>
@@ -1835,93 +1584,34 @@
                     <button onclick="setBackgroundMode('picture')">Picture</button>
                 </div>
                 
-                <div class="color-input-container" id="bg-color-section">
-                    <div class="color-input-wrapper">
-                        <div class="color-preview" id="color-preview" style="background: #0a0a0f;"></div>
-                        <input type="text" class="color-hex-input" id="bg-color-hex" value="#0a0a0f" placeholder="#000000">
-                    </div>
-                    <button class="color-apply-btn" onclick="applyBackgroundColor()">Apply</button>
+                <div class="color-picker-container" id="bg-color-section">
+                    <input type="color" id="bg-color" value="#0a0a0f">
                 </div>
                 
                 <div class="picture-upload-container" id="bg-picture-section" style="display: none;">
-                    <input type="text" class="color-hex-input" id="bg-picture-name" placeholder="Select image..." readonly style="cursor: pointer;" onclick="document.getElementById('bg-picture').click()">
-                    <input type="file" id="bg-picture" accept="image/*" style="display: none;">
-                    <button class="color-apply-btn" id="bg-picture-btn" onclick="selectBackgroundImage()">Select</button>
+                    <div class="input-group">
+                        <input type="text" class="form-input" id="bg-picture-name" placeholder="Select image..." readonly>
+                        <input type="file" id="bg-picture" accept="image/*" style="display: none;">
+                        <button class="load-btn" onclick="document.getElementById('bg-picture').click()">Select</button>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Panel Footer -->
-        <div class="panel-footer">
-            <button class="btn-primary" onclick="saveToDrive()">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
-                    <polyline points="17 21 17 13 7 13 7 21"/>
-                    <polyline points="7 3 7 8 15 8"/>
-                </svg>
-                Save to Drive
-            </button>
-            <button class="btn-icon" onclick="openDownloadModal()" title="Download">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-                    <polyline points="7 10 12 15 17 10"/>
-                    <line x1="12" y1="15" x2="12" y2="3"/>
-                </svg>
-            </button>
-        </div>
-    </div>
-
-    <!-- Download Modal -->
-    <div class="modal-overlay" id="download-modal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 class="modal-title">Copy Code</h3>
-                <button class="modal-close" onclick="closeDownloadModal()">×</button>
-            </div>
-            <div class="modal-body">
-                <div class="download-option">
-                    <label class="section-label">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                            <polyline points="14 2 14 8 20 8"/>
-                            <line x1="16" y1="13" x2="8" y2="13"/>
-                            <line x1="16" y1="17" x2="8" y2="17"/>
-                            <polyline points="10 9 9 9 8 9"/>
-                        </svg>
-                        JSON Configuration
-                    </label>
-                    <button class="btn btn-secondary" onclick="copyJSON()" style="width: 100%;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                        </svg>
-                        Copy JSON to Clipboard
-                    </button>
-                </div>
-
-                <div class="download-option">
-                    <label class="section-label">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="16 18 22 12 16 6"/>
-                            <polyline points="8 6 2 12 8 18"/>
-                        </svg>
-                        CSS Code
-                    </label>
-                    <select id="css-breakpoint-select" class="form-input" style="margin-bottom: 12px;">
-                        <option value="monitor">Monitor</option>
-                        <option value="desktop">Desktop</option>
-                        <option value="laptop">Laptop</option>
-                        <option value="tablet" selected>Tablet</option>
-                        <option value="mobile">Mobile</option>
-                    </select>
-                    <button class="btn btn-secondary" onclick="copyCSS()" style="width: 100%;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                        </svg>
-                        Copy CSS to Clipboard
-                    </button>
-                </div>
+            <!-- Bottom Actions -->
+            <div class="bottom-actions">
+                <button class="btn-primary" onclick="saveToDrive()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+                        <polyline points="17 21 17 13 7 13 7 21"/>
+                        <polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                    Save to Drive
+                </button>
+                <button class="btn-icon" onclick="openDownloadModal()" title="Download Code">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 15v4c0 1.1.9 2 2 2h14a2 2 0 002-2v-4M17 9l-5 5-5-5M12 12.8V2.5"/>
+                    </svg>
+                </button>
             </div>
         </div>
     </div>
@@ -1949,7 +1639,7 @@
                         <input type="number" class="form-input" id="bp-monitor" value="1440" min="0" step="1">
                     </div>
                     <div class="setting-column">
-                        <label class="setting-label">Max X Range (px)</label>
+                        <label class="setting-label">Max X Range</label>
                         <input type="number" class="form-input" id="bp-monitor-x" value="500" min="0" step="10">
                     </div>
                 </div>
@@ -1960,7 +1650,7 @@
                         <input type="number" class="form-input" id="bp-desktop" value="1280" min="0" step="1">
                     </div>
                     <div class="setting-column">
-                        <label class="setting-label">Max X Range (px)</label>
+                        <label class="setting-label">Max X Range</label>
                         <input type="number" class="form-input" id="bp-desktop-x" value="500" min="0" step="10">
                     </div>
                 </div>
@@ -1971,7 +1661,7 @@
                         <input type="number" class="form-input" id="bp-laptop" value="992" min="0" step="1">
                     </div>
                     <div class="setting-column">
-                        <label class="setting-label">Max X Range (px)</label>
+                        <label class="setting-label">Max X Range</label>
                         <input type="number" class="form-input" id="bp-laptop-x" value="500" min="0" step="10">
                     </div>
                 </div>
@@ -1982,7 +1672,7 @@
                         <input type="number" class="form-input" id="bp-tablet" value="768" min="0" step="1">
                     </div>
                     <div class="setting-column">
-                        <label class="setting-label">Max X Range (px)</label>
+                        <label class="setting-label">Max X Range</label>
                         <input type="number" class="form-input" id="bp-tablet-x" value="500" min="0" step="10">
                     </div>
                 </div>
@@ -1993,7 +1683,7 @@
                         <input type="number" class="form-input" id="bp-mobile" value="0" min="0" step="1">
                     </div>
                     <div class="setting-column">
-                        <label class="setting-label">Max X Range (px)</label>
+                        <label class="setting-label">Max X Range</label>
                         <input type="number" class="form-input" id="bp-mobile-x" value="500" min="0" step="10">
                     </div>
                 </div>
@@ -2024,6 +1714,35 @@
         </div>
     </div>
 
+    <!-- Download Code Modal -->
+    <div class="modal-overlay" id="download-modal">
+        <div class="modal modal-xlarge">
+            <div class="modal-header">
+                <h3 class="modal-title">Download Embed Code</h3>
+                <button class="modal-close" onclick="closeDownloadModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p class="download-info">
+                    Copy the code below and paste it into your Shopify theme or website admin. 
+                    Select a breakpoint to get code for that screen size, or "All" for a combined responsive snippet.
+                </p>
+                <div class="download-bp-tabs" id="download-bp-tabs"></div>
+                <div class="code-block-wrapper">
+                    <div class="code-block-header">
+                        <span class="code-block-label" id="code-block-label">HTML / CSS / JS</span>
+                        <button class="copy-btn" onclick="copyDownloadCode()">Copy Code</button>
+                    </div>
+                    <div class="code-block-content">
+                        <pre id="download-code-output"></pre>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeDownloadModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notification -->
     <div id="toast" class="toast">
         <div class="toast-icon success">
@@ -2035,60 +1754,30 @@
     </div>
 
     <!-- Spline Runtime -->
-    <script type="module" src="https://unpkg.com/@splinetool/runtime@1.0.38/build/runtime.js"></script>
+    <script type="module" src="https://unpkg.com/@splinetool/runtime/build/runtime.js"></script>
     
     <script type="module">
-        import { Application } from 'https://unpkg.com/@splinetool/runtime@1.0.38/build/runtime.js';
+        import { Application } from 'https://unpkg.com/@splinetool/runtime/build/runtime.js';
 
         let splineApp = null;
-        let allSceneObjects = []; // Store all found objects for show/hide functionality
         let currentConfig = {
             name: 'Untitled Config',
             splineUrl: '',
             targetObject: null,
-            originalPosition: null, // Store original object position
             backgroundColor: '#0a0a0f',
             backgroundMode: 'color',
             livePreview: false,
             scrollPosition: 0,
             activeBreakpoint: 'tablet',
             breakpoints: {
-                monitor: { minWidth: 1440, maxXRange: 500, keyframes: [] },
-                desktop: { minWidth: 1280, maxXRange: 500, keyframes: [] },
-                laptop: { minWidth: 992, maxXRange: 500, keyframes: [] },
-                tablet: { minWidth: 768, maxXRange: 500, keyframes: [] },
-                mobile: { minWidth: 0, maxXRange: 500, keyframes: [] }
+                monitor: { minWidth: 1440, maxXRange: 1500, keyframes: [] },
+                desktop: { minWidth: 1280, maxXRange: 1500, keyframes: [] },
+                laptop: { minWidth: 992, maxXRange: 1500, keyframes: [] },
+                tablet: { minWidth: 768, maxXRange: 1500, keyframes: [] },
+                mobile: { minWidth: 0, maxXRange: 1500, keyframes: [] }
             }
         };
 
-        // Update Add Position button state based on scroll position
-        function updateAddPositionButton() {
-            const breakpoint = currentConfig.activeBreakpoint;
-            const keyframes = currentConfig.breakpoints[breakpoint].keyframes;
-            const currentScroll = currentConfig.scrollPosition;
-            const addBtn = document.querySelector('.add-keyframe-btn');
-            
-            if (!addBtn) return;
-            
-            // Find the highest scroll position in existing keyframes
-            const maxPosition = keyframes.length > 0 
-                ? Math.max(...keyframes.map(kf => kf.position))
-                : -1;
-            
-            // Disable button if current scroll is less than or equal to last position
-            if (currentScroll <= maxPosition) {
-                addBtn.disabled = true;
-                addBtn.style.opacity = '0.4';
-                addBtn.style.cursor = 'not-allowed';
-                addBtn.title = `Scroll position must be greater than ${maxPosition}%`;
-            } else {
-                addBtn.disabled = false;
-                addBtn.style.opacity = '1';
-                addBtn.style.cursor = 'pointer';
-                addBtn.title = 'Add new position keyframe';
-            }
-        }
-        
         // Sync scroll slider and input
         const scrollSlider = document.getElementById('scroll-slider');
         const scrollValue = document.getElementById('scroll-value');
@@ -2098,9 +1787,6 @@
                 const val = e.target.value;
                 scrollValue.value = val;
                 currentConfig.scrollPosition = parseInt(val);
-                
-                // Update Add Position button state
-                updateAddPositionButton();
                 
                 // Apply transformation if live preview is on
                 if (currentConfig.livePreview) {
@@ -2114,9 +1800,6 @@
                 scrollValue.value = val;
                 currentConfig.scrollPosition = val;
                 
-                // Update Add Position button state
-                updateAddPositionButton();
-                
                 // Apply transformation if live preview is on
                 if (currentConfig.livePreview) {
                     applyTransformation();
@@ -2127,40 +1810,40 @@
         // Toggle Live Preview
         window.toggleLivePreview = function() {
             currentConfig.livePreview = document.getElementById('live-preview-toggle').checked;
-            console.log('Live preview:', currentConfig.livePreview ? 'On' : 'Off');
+            if (currentConfig.livePreview) {
+                applyTransformation();
+                startLiveLoop();
+            } else {
+                stopLiveLoop();
+            }
         };
 
-        // Add Keyframe
+        // Add Keyframe — copies values from the previous position for smooth transitions
         window.addKeyframe = function() {
             const position = currentConfig.scrollPosition;
             const breakpoint = currentConfig.activeBreakpoint;
             const keyframes = currentConfig.breakpoints[breakpoint].keyframes;
             
-            // Find the highest scroll position in existing keyframes
-            const maxPosition = keyframes.length > 0 
-                ? Math.max(...keyframes.map(kf => kf.position))
-                : -1;
+            let posX = 0, posY = 0, posZ = 0, rotX = 0, rotY = 0, rotZ = 0;
             
-            // Prevent adding if current position is not greater than last position
-            if (position <= maxPosition) {
-                alert(`Scroll position must be greater than ${maxPosition}%`);
-                return;
+            if (keyframes.length > 0) {
+                const prev = keyframes[keyframes.length - 1];
+                posX = prev.posX;
+                posY = prev.posY;
+                posZ = prev.posZ;
+                rotX = prev.rotX;
+                rotY = prev.rotY;
+                rotZ = prev.rotZ;
             }
             
-            // Always use 0,0,0 as default (relative to original position)
             keyframes.push({
                 position: position,
                 name: `Position ${keyframes.length + 1}`,
-                posX: 0, 
-                posY: 0, 
-                posZ: 0,
-                rotX: 0, rotY: 0, rotZ: 0
+                posX, posY, posZ,
+                rotX, rotY, rotZ
             });
             
             renderKeyframes();
-            
-            // Update button state after adding
-            updateAddPositionButton();
         };
 
         // Delete Keyframe
@@ -2177,67 +1860,13 @@
             document.querySelectorAll('.breakpoint-tab').forEach(tab => {
                 tab.classList.remove('active');
             });
-            const activeTab = document.querySelector(`[data-breakpoint="${breakpoint}"]`);
-            if (activeTab) activeTab.classList.add('active');
+            document.querySelector(`[data-breakpoint="${breakpoint}"]`).classList.add('active');
             
             const title = breakpoint.toUpperCase();
             document.getElementById('keyframes-title').textContent = `POSITIONS ( ${title} )`;
-
+            
             renderKeyframes();
         };
-
-        // Custom Dropdown Functions
-        window.toggleDropdown = function() {
-            const dropdown = document.querySelector('.breakpoint-dropdown-wrapper .dropdown-selected');
-            const options = document.getElementById('dropdown-options');
-            
-            if (dropdown && options) {
-                dropdown.classList.toggle('active');
-                options.classList.toggle('show');
-            }
-        };
-
-        window.selectBreakpoint = function(value, label) {
-            // Update selected text
-            document.getElementById('selected-breakpoint').textContent = label;
-            
-            // Update selected state in options
-            const breakpointOptions = document.querySelectorAll('#dropdown-options .dropdown-option');
-            breakpointOptions.forEach(option => {
-                option.classList.remove('selected');
-            });
-            const selectedOption = document.querySelector(`#dropdown-options [data-value="${value}"]`);
-            if (selectedOption) {
-                selectedOption.classList.add('selected');
-            }
-            
-            // Close dropdown
-            const dropdown = document.querySelector('.breakpoint-dropdown-wrapper .dropdown-selected');
-            const options = document.getElementById('dropdown-options');
-            if (dropdown) dropdown.classList.remove('active');
-            if (options) options.classList.remove('show');
-            
-            // Switch breakpoint
-            switchBreakpoint(value);
-        };
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(event) {
-            // Close breakpoint dropdown
-            const breakpointDropdown = document.querySelector('.breakpoint-dropdown-wrapper .custom-dropdown');
-            if (breakpointDropdown && !breakpointDropdown.contains(event.target)) {
-                const dropdown = document.querySelector('.breakpoint-dropdown-wrapper .dropdown-selected');
-                const options = document.getElementById('dropdown-options');
-                if (dropdown) dropdown.classList.remove('active');
-                if (options) options.classList.remove('show');
-            }
-            
-            // Close object dropdown
-            const objectDropdown = document.getElementById('object-dropdown');
-            if (objectDropdown && !objectDropdown.contains(event.target)) {
-                document.getElementById('object-dropdown-options')?.classList.remove('show');
-            }
-        });
 
         // Render Keyframes
         function renderKeyframes() {
@@ -2269,26 +1898,17 @@
                             <div class="control-row">
                                 <span class="axis-label axis-x">X</span>
                                 <input type="range" class="axis-slider" min="-${maxXRange}" max="${maxXRange}" step="1" value="${keyframe.posX}" oninput="updateSliderValue(${index}, 'posX', this.value)">
-                                <div class="input-with-unit">
-                                    <input type="number" class="axis-input" value="${keyframe.posX}" step="1" onchange="updateKeyframeParam(${index}, 'posX', this.value)">
-                                    <span class="input-unit">px</span>
-                                </div>
+                                <input type="number" class="axis-input" value="${keyframe.posX}" step="1" oninput="updateKeyframeParam(${index}, 'posX', this.value)">
                             </div>
                             <div class="control-row">
                                 <span class="axis-label axis-y">Y</span>
-                                <input type="range" class="axis-slider" min="-${maxXRange}" max="${maxXRange}" step="1" value="${keyframe.posY}" oninput="updateSliderValue(${index}, 'posY', this.value)">
-                                <div class="input-with-unit">
-                                    <input type="number" class="axis-input" value="${keyframe.posY}" step="1" onchange="updateKeyframeParam(${index}, 'posY', this.value)">
-                                    <span class="input-unit">px</span>
-                                </div>
+                                <input type="range" class="axis-slider" min="-2000" max="2000" step="1" value="${keyframe.posY}" oninput="updateSliderValue(${index}, 'posY', this.value)">
+                                <input type="number" class="axis-input" value="${keyframe.posY}" step="1" oninput="updateKeyframeParam(${index}, 'posY', this.value)">
                             </div>
                             <div class="control-row">
                                 <span class="axis-label axis-z">Z</span>
-                                <input type="range" class="axis-slider" min="-${maxXRange}" max="${maxXRange}" step="1" value="${keyframe.posZ}" oninput="updateSliderValue(${index}, 'posZ', this.value)">
-                                <div class="input-with-unit">
-                                    <input type="number" class="axis-input" value="${keyframe.posZ}" step="1" onchange="updateKeyframeParam(${index}, 'posZ', this.value)">
-                                    <span class="input-unit">px</span>
-                                </div>
+                                <input type="range" class="axis-slider" min="-2000" max="2000" step="1" value="${keyframe.posZ}" oninput="updateSliderValue(${index}, 'posZ', this.value)">
+                                <input type="number" class="axis-input" value="${keyframe.posZ}" step="1" oninput="updateKeyframeParam(${index}, 'posZ', this.value)">
                             </div>
                         </div>
                         
@@ -2297,97 +1917,271 @@
                             <div class="control-row">
                                 <span class="axis-label axis-x">X</span>
                                 <input type="range" class="axis-slider" min="-270" max="270" step="1" value="${keyframe.rotX}" oninput="updateSliderValue(${index}, 'rotX', this.value)">
-                                <input type="number" class="axis-input" value="${keyframe.rotX}" step="1" onchange="updateKeyframeParam(${index}, 'rotX', this.value)">
+                                <input type="number" class="axis-input" value="${keyframe.rotX}" step="1" oninput="updateKeyframeParam(${index}, 'rotX', this.value)">
                             </div>
                             <div class="control-row">
                                 <span class="axis-label axis-y">Y</span>
                                 <input type="range" class="axis-slider" min="-270" max="270" step="1" value="${keyframe.rotY}" oninput="updateSliderValue(${index}, 'rotY', this.value)">
-                                <input type="number" class="axis-input" value="${keyframe.rotY}" step="1" onchange="updateKeyframeParam(${index}, 'rotY', this.value)">
+                                <input type="number" class="axis-input" value="${keyframe.rotY}" step="1" oninput="updateKeyframeParam(${index}, 'rotY', this.value)">
                             </div>
                             <div class="control-row">
                                 <span class="axis-label axis-z">Z</span>
                                 <input type="range" class="axis-slider" min="-270" max="270" step="1" value="${keyframe.rotZ}" oninput="updateSliderValue(${index}, 'rotZ', this.value)">
-                                <input type="number" class="axis-input" value="${keyframe.rotZ}" step="1" onchange="updateKeyframeParam(${index}, 'rotZ', this.value)">
+                                <input type="number" class="axis-input" value="${keyframe.rotZ}" step="1" oninput="updateKeyframeParam(${index}, 'rotZ', this.value)">
                             </div>
                         </div>
                     </div>
                 `;
                 container.appendChild(item);
             });
-            
-            // Update Add Position button state after rendering
-            updateAddPositionButton();
         }
 
-        // Toggle Keyframe
+        // Toggle Keyframe — also moves object to that position and sets scroll
         window.toggleKeyframe = function(index) {
             const items = document.querySelectorAll('.keyframe-item');
             items.forEach((item, i) => {
                 if (i !== index) item.classList.remove('expanded');
             });
             items[index]?.classList.toggle('expanded');
+            
+            // Move scroll to this keyframe's position and apply its transform
+            const breakpoint = currentConfig.activeBreakpoint;
+            const keyframe = currentConfig.breakpoints[breakpoint].keyframes[index];
+            if (keyframe) {
+                currentConfig.scrollPosition = keyframe.position;
+                const scrollSlider = document.getElementById('scroll-slider');
+                const scrollValue = document.getElementById('scroll-value');
+                if (scrollSlider) scrollSlider.value = keyframe.position;
+                if (scrollValue) scrollValue.value = keyframe.position;
+                
+                applyDirectTransformation(index);
+            }
         };
+
+        // Cached reference to the target Spline object
+        let cachedTargetObj = null;
+        let cachedTargetName = null;
+        let transformRAF = null;
+        let activeTransform = null;
+        let liveRAF = null;
+        
+        // Screen-space movement: stores camera axes and object's original position
+        let screenRight = null;
+        let screenUp = null;
+        let screenFwd = null;
+        let initialPos = null;
+        let initialRot = null;
+
+        function getTargetObject() {
+            if (!splineApp || !currentConfig.targetObject) return null;
+            if (cachedTargetObj && cachedTargetName === currentConfig.targetObject) {
+                return cachedTargetObj;
+            }
+            try {
+                cachedTargetObj = splineApp.findObjectByName(currentConfig.targetObject);
+                cachedTargetName = currentConfig.targetObject;
+            } catch(e) {
+                cachedTargetObj = null;
+            }
+            return cachedTargetObj;
+        }
+
+        function findSceneCamera() {
+            let camera = null;
+            for (const p of ['_camera', 'camera', '_activeCamera']) {
+                if (splineApp[p] && splineApp[p].isCamera) { camera = splineApp[p]; break; }
+            }
+            if (!camera) {
+                try {
+                    const all = splineApp.getAllObjects();
+                    camera = all.find(o => o.isCamera || o.type === 'PerspectiveCamera' || o.type === 'OrthographicCamera');
+                } catch(e) {}
+            }
+            if (!camera) {
+                try {
+                    const scene = splineApp._scene || splineApp.scene;
+                    if (scene) scene.traverse(child => {
+                        if (!camera && (child.isCamera || child.type?.includes('Camera'))) camera = child;
+                    });
+                } catch(e) {}
+            }
+            return camera;
+        }
+
+        function setupScreenAxes() {
+            const camera = findSceneCamera();
+            if (!camera) { screenRight = null; return; }
+            try {
+                if (camera.updateWorldMatrix) camera.updateWorldMatrix(true, false);
+                else if (camera.updateMatrixWorld) camera.updateMatrixWorld(true);
+            } catch(e) {}
+            const m = camera.matrixWorld?.elements;
+            if (!m) { screenRight = null; return; }
+            const norm = (x, y, z) => {
+                const len = Math.sqrt(x*x + y*y + z*z);
+                return len > 0.001 ? { x: x/len, y: y/len, z: z/len } : { x: 1, y: 0, z: 0 };
+            };
+            screenRight = norm(m[0], m[1], m[2]);
+            screenUp = norm(m[4], m[5], m[6]);
+            screenFwd = norm(-m[8], -m[9], -m[10]);
+        }
+
+        function storeInitialTransform() {
+            const obj = getTargetObject();
+            if (obj && obj.position) {
+                initialPos = { x: obj.position.x, y: obj.position.y, z: obj.position.z };
+            }
+            if (obj && obj.rotation) {
+                initialRot = { x: obj.rotation.x, y: obj.rotation.y, z: obj.rotation.z };
+            }
+            // #region agent log
+            fetch('http://127.0.0.1:7245/ingest/125a7df1-7ac7-4f11-95c0-276433f98821',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'spline-tool.html:storeInitialTransform',message:'Origin captured',data:{initialPos,initialRot,objFound:!!obj,hasPosition:!!(obj&&obj.position),hasRotation:!!(obj&&obj.rotation)},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
+            // #endregion
+        }
+
+        function forceApplyTransform(obj, t) {
+            if (!obj) return;
+            if (screenRight && initialPos) {
+                obj.position.x = initialPos.x + t.posX * screenRight.x + t.posY * screenUp.x + t.posZ * screenFwd.x;
+                obj.position.y = initialPos.y + t.posX * screenRight.y + t.posY * screenUp.y + t.posZ * screenFwd.y;
+                obj.position.z = initialPos.z + t.posX * screenRight.z + t.posY * screenUp.z + t.posZ * screenFwd.z;
+                const base = initialRot || { x: 0, y: 0, z: 0 };
+                obj.rotation.x = base.x + t.rotX;
+                obj.rotation.y = base.y + t.rotY;
+                obj.rotation.z = base.z + t.rotZ;
+            } else {
+                obj.position.x = t.posX;
+                obj.position.y = t.posY;
+                obj.position.z = t.posZ;
+                obj.rotation.x = t.rotX;
+                obj.rotation.y = t.rotY;
+                obj.rotation.z = t.rotZ;
+            }
+        }
+
+        function startContinuousApply() {
+            if (transformRAF) cancelAnimationFrame(transformRAF);
+            let frameCount = 0;
+            const maxFrames = 120;
+            function tick() {
+                if (!activeTransform) return;
+                const obj = getTargetObject();
+                if (obj) forceApplyTransform(obj, activeTransform);
+                frameCount++;
+                if (frameCount < maxFrames) {
+                    transformRAF = requestAnimationFrame(tick);
+                } else {
+                    transformRAF = null;
+                }
+            }
+            transformRAF = requestAnimationFrame(tick);
+        }
+        
+        // Smooth interpolation state — object glides toward target instead of snapping
+        let smoothTransform = null;
+        let lastLiveTime = null;
+        const SMOOTH_SPEED = 0.10;
+
+        function startLiveLoop() {
+            if (liveRAF) return;
+            lastLiveTime = null;
+            function liveTick(timestamp) {
+                if (!currentConfig.livePreview) {
+                    liveRAF = null;
+                    smoothTransform = null;
+                    lastLiveTime = null;
+                    return;
+                }
+                if (activeTransform) {
+                    if (!smoothTransform) {
+                        smoothTransform = { ...activeTransform };
+                    } else {
+                        if (!lastLiveTime) lastLiveTime = timestamp;
+                        const dt = Math.min((timestamp - lastLiveTime) / 16.667, 3);
+                        const factor = 1 - Math.pow(1 - SMOOTH_SPEED, dt);
+
+                        smoothTransform.posX += (activeTransform.posX - smoothTransform.posX) * factor;
+                        smoothTransform.posY += (activeTransform.posY - smoothTransform.posY) * factor;
+                        smoothTransform.posZ += (activeTransform.posZ - smoothTransform.posZ) * factor;
+                        smoothTransform.rotX += (activeTransform.rotX - smoothTransform.rotX) * factor;
+                        smoothTransform.rotY += (activeTransform.rotY - smoothTransform.rotY) * factor;
+                        smoothTransform.rotZ += (activeTransform.rotZ - smoothTransform.rotZ) * factor;
+                    }
+                    const obj = getTargetObject();
+                    if (obj) forceApplyTransform(obj, smoothTransform);
+                }
+                lastLiveTime = timestamp;
+                liveRAF = requestAnimationFrame(liveTick);
+            }
+            liveRAF = requestAnimationFrame(liveTick);
+        }
+        
+        function stopLiveLoop() {
+            if (liveRAF) {
+                cancelAnimationFrame(liveRAF);
+                liveRAF = null;
+            }
+        }
 
         // Update Slider Value
         window.updateSliderValue = function(index, param, value) {
             const breakpoint = currentConfig.activeBreakpoint;
             currentConfig.breakpoints[breakpoint].keyframes[index][param] = parseFloat(value);
             
+            // Sync number input
             const keyframeItems = document.querySelectorAll('.keyframe-item');
             if (keyframeItems[index]) {
-                const inputField = keyframeItems[index].querySelector(`input.axis-input[onchange*="${param}"]`);
-                if (inputField) inputField.value = value;
+                const inputs = keyframeItems[index].querySelectorAll('input.axis-input');
+                const paramOrder = ['posX','posY','posZ','rotX','rotY','rotZ'];
+                const paramIdx = paramOrder.indexOf(param);
+                if (paramIdx >= 0 && inputs[paramIdx]) inputs[paramIdx].value = value;
             }
             
-            // Apply transformation directly to the object
             applyDirectTransformation(index);
         };
 
-        // Update Keyframe Param
+        // Update Keyframe Param (from number input)
         window.updateKeyframeParam = function(index, param, value) {
             const breakpoint = currentConfig.activeBreakpoint;
             currentConfig.breakpoints[breakpoint].keyframes[index][param] = parseFloat(value);
             
-            // Apply transformation directly to the object
+            // Sync slider
+            const keyframeItems = document.querySelectorAll('.keyframe-item');
+            if (keyframeItems[index]) {
+                const sliders = keyframeItems[index].querySelectorAll('input.axis-slider');
+                const paramOrder = ['posX','posY','posZ','rotX','rotY','rotZ'];
+                const paramIdx = paramOrder.indexOf(param);
+                if (paramIdx >= 0 && sliders[paramIdx]) sliders[paramIdx].value = value;
+            }
+            
             applyDirectTransformation(index);
         };
         
-        // Apply transformation directly from a specific keyframe (no interpolation)
+        // Apply transformation directly from a specific keyframe (snap, no smoothing)
         function applyDirectTransformation(keyframeIndex) {
-            if (!splineApp || !currentConfig.targetObject) return;
+            const obj = getTargetObject();
+            if (!obj) return;
             
             const breakpoint = currentConfig.activeBreakpoint;
             const keyframe = currentConfig.breakpoints[breakpoint].keyframes[keyframeIndex];
-            
             if (!keyframe) return;
             
-            // Find the target object in Spline
-            let targetObj = null;
-            try {
-                targetObj = splineApp.findObjectByName(currentConfig.targetObject);
-            } catch(e) {
-                console.error('Object not found:', currentConfig.targetObject);
-                return;
-            }
+            activeTransform = {
+                posX: keyframe.posX,
+                posY: keyframe.posY,
+                posZ: keyframe.posZ,
+                rotX: keyframe.rotX * Math.PI / 180,
+                rotY: keyframe.rotY * Math.PI / 180,
+                rotZ: keyframe.rotZ * Math.PI / 180
+            };
             
-            if (!targetObj) return;
+            // Snap smoothTransform so slider edits feel immediate
+            smoothTransform = { ...activeTransform };
             
-            // Get original position (use current position as fallback)
-            const origin = currentConfig.originalPosition || { x: 0, y: 0, z: 0 };
-            
-            // Apply position as offset from original position
-            targetObj.position.set(
-                origin.x + keyframe.posX,  // X: horizontal (left/right)
-                origin.y + keyframe.posY,  // Y: vertical (up/down)
-                origin.z + keyframe.posZ   // Z: depth (forward/back)
-            );
-            
-            // Apply rotation directly (convert degrees to radians)
-            targetObj.rotation.set(
-                keyframe.rotX * Math.PI / 180,
-                keyframe.rotY * Math.PI / 180,
-                keyframe.rotZ * Math.PI / 180
-            );
+            // Apply immediately
+            forceApplyTransform(obj, activeTransform);
+            // Then keep applying for several frames to override Spline's internal state
+            startContinuousApply();
         }
 
         // Load Spline Scene
@@ -2398,18 +2192,8 @@
                 return;
             }
 
-            // Handle different URL formats
             if (!url.startsWith('http')) {
                 url = 'https://prod.spline.design/' + url;
-            }
-            
-            // Convert share URL to splinecode URL if needed
-            // Format: https://prod.spline.design/XXXXX -> https://prod.spline.design/XXXXX/scene.splinecode
-            if (url.includes('prod.spline.design') && !url.endsWith('.splinecode')) {
-                // Remove trailing slash if exists
-                url = url.replace(/\/$/, '');
-                // Add /scene.splinecode
-                url = url + '/scene.splinecode';
             }
             
             document.getElementById('spline-url').value = url;
@@ -2418,16 +2202,20 @@
                 updateSceneStatus('loading', 'Loading scene');
                 
                 if (splineApp) splineApp = null;
+                cachedTargetObj = null;
+                cachedTargetName = null;
+                activeTransform = null;
+                screenRight = null;
+                initialPos = null;
+                initialRot = null;
+                stopLiveLoop();
                 
                 const container = document.getElementById('canvas-container');
-                // Remove only the canvas, keep the loader
-                const existingCanvas = container.querySelector('canvas');
-                if (existingCanvas) existingCanvas.remove();
-                
+                container.innerHTML = '';
                 const newCanvas = document.createElement('canvas');
                 newCanvas.id = 'canvas3d';
                 newCanvas.style.cssText = 'width:100%;height:100%;display:block;background:transparent;';
-                container.insertBefore(newCanvas, container.firstChild);
+                container.appendChild(newCanvas);
 
                 splineApp = new Application(newCanvas);
                 await splineApp.load(url);
@@ -2437,7 +2225,15 @@
                 currentConfig.splineUrl = url;
                 updateSceneStatus('success', 'Scene loaded successfully!');
                 
-                setTimeout(findAndDisplaySceneObjects, 500);
+                setTimeout(() => {
+                    findAndDisplaySceneObjects();
+                    setupScreenAxes();
+                    storeInitialTransform();
+                    // #region agent log
+                    const _c = document.getElementById('canvas3d');
+                    fetch('http://127.0.0.1:7245/ingest/125a7df1-7ac7-4f11-95c0-276433f98821',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'spline-tool.html:afterSceneLoad',message:'Config tool canvas dims',data:{cssWidth:_c?.clientWidth,cssHeight:_c?.clientHeight,attrWidth:_c?.width,attrHeight:_c?.height,innerW:window.innerWidth,innerH:window.innerHeight,dpr:window.devicePixelRatio},timestamp:Date.now(),hypothesisId:'H2'})}).catch(()=>{});
+                    // #endregion
+                }, 500);
                 
             } catch (error) {
                 console.error('Error loading scene:', error);
@@ -2468,397 +2264,165 @@
             
             let foundObjects = [];
             
-            // Get all first-level children (direct children of the scene)
-            if (splineApp._scene && splineApp._scene.children) {
-                console.log('Searching for objects in scene structure...');
-                console.log('Scene children count:', splineApp._scene.children.length);
-                
-                splineApp._scene.children.forEach(child => {
-                    console.log(`First-level: ${child.name} (type: ${child.type || 'Unknown'}, children: ${child.children?.length || 0})`);
+            try {
+                const allObjs = splineApp.getAllObjects();
+                if (allObjs && allObjs.length > 0) {
+                    // Log all objects with parent info for debugging
+                    allObjs.forEach(obj => {
+                        if (!obj || !obj.name) return;
+                        console.log('[3DConfig] Object:', obj.name, 
+                            'type:', obj.type, 
+                            'parent:', obj.parent?.name || obj.parent?.type || 'none',
+                            'children:', obj.children?.length || 0,
+                            'pos:', obj.position ? `${obj.position.x?.toFixed(1)},${obj.position.y?.toFixed(1)},${obj.position.z?.toFixed(1)}` : 'N/A'
+                        );
+                    });
                     
-                    // Check if this is a meaningful object (not camera, light, or default scene)
-                    const isSystemObject = !child.name || 
-                                          child.name === '' || 
-                                          child.name === 'Scene' || 
-                                          child.name === 'Scene 1' ||
-                                          child.name.toLowerCase().includes('camera') ||
-                                          child.name.toLowerCase().includes('light') ||
-                                          child.name.toLowerCase().includes('invisible') ||
-                                          child.name.toLowerCase().includes('buildin');
-                    
-                    if (!isSystemObject) {
-                        // This is a valid first-level object, add it
-                        console.log(`  ✓ Adding first-level object: ${child.name}`);
-                        foundObjects.push({ 
-                            name: child.name, 
-                            type: child.type || 'Object', 
-                            obj: child 
-                        });
-                    }
-                    
-                    // Also check children of this group (second level)
-                    if (child.children && child.children.length > 0) {
-                        child.children.forEach(grandchild => {
-                            console.log(`  Second-level: ${grandchild.name} (type: ${grandchild.type || 'Unknown'})`);
-                            
-                            const isGrandchildSystemObject = !grandchild.name || 
-                                                             grandchild.name === '' || 
-                                                             grandchild.name === 'Scene' || 
-                                                             grandchild.name === 'Scene 1' ||
-                                                             grandchild.name.toLowerCase().includes('camera') ||
-                                                             grandchild.name.toLowerCase().includes('light') ||
-                                                             grandchild.name.toLowerCase().includes('invisible') ||
-                                                             grandchild.name.toLowerCase().includes('buildin');
-                            
-                            if (!isGrandchildSystemObject) {
-                                console.log(`    ✓ Adding second-level object: ${grandchild.name}`);
-                                foundObjects.push({ 
-                                    name: grandchild.name, 
-                                    type: grandchild.type || 'Object', 
-                                    obj: grandchild 
-                                });
-                            }
-                        });
-                    }
+                    // Find the scene root (deepest common parent)
+                    const sceneRootTypes = ['Scene', 'Group'];
+                    allObjs.forEach(obj => {
+                        if (!obj || !obj.name || obj.name.startsWith('_')) return;
+                        // Top-level: parent is Scene, or parent has no parent, or parent type is Scene
+                        const p = obj.parent;
+                        const isTopLevel = !p 
+                            || p.type === 'Scene' 
+                            || p.name === 'Scene 1'
+                            || (!p.parent && sceneRootTypes.includes(p.type));
+                        if (isTopLevel) {
+                            foundObjects.push({ name: obj.name, type: obj.type || 'Object', obj });
+                        }
+                    });
+                    console.log('[3DConfig] Top-level objects:', foundObjects.map(o => `${o.name}(${o.type}, children:${o.obj.children?.length||0})`));
+                }
+            } catch(e) {
+                console.log('[3DConfig] getAllObjects() not available, falling back to name search');
+            }
+            
+            if (foundObjects.length === 0) {
+                const objectNames = ['Red Drop CBD', 'Red drop', 'Drop', 'CBD', 'Bottle', 'Product', 'Cube', 'Sphere', 'Model', 'Object'];
+                objectNames.forEach(name => {
+                    try {
+                        const obj = splineApp.findObjectByName(name);
+                        if (obj && !foundObjects.some(o => o.name === name)) {
+                            foundObjects.push({ name, type: obj.type || 'Object', obj });
+                        }
+                    } catch(e) {}
                 });
-                
-                console.log(`Found ${foundObjects.length} objects total:`, foundObjects.map(o => o.name));
             }
             
             if (foundObjects.length > 0) {
                 displayObjectsList(foundObjects);
             } else {
-                console.warn('No product objects found in the scene. Showing all named objects...');
-                // Fallback: show all named objects if no CBD products found
-                if (splineApp._scene && splineApp._scene.children) {
-                    splineApp._scene.children.forEach(child => {
-                        if (child.name && child.name !== '' && child.name !== 'Scene') {
-                            foundObjects.push({ 
-                                name: child.name, 
-                                type: child.type || 'Object', 
-                                obj: child 
-                            });
-                        }
-                    });
-                    if (foundObjects.length > 0) {
-                        displayObjectsList(foundObjects);
-                    }
-                }
+                console.warn('[3DConfig] No objects found in scene');
             }
         }
         
         function displayObjectsList(objects) {
-            const selectorSection = document.getElementById('object-selector-section');
-            const dropdownOptions = document.getElementById('object-dropdown-options');
-            const selectedObjectSpan = document.getElementById('selected-object');
+            const skipTypes = ['PointLight', 'DirectionalLight', 'SpotLight', 'AmbientLight', 'HemisphereLight', 'RectAreaLight'];
+            const skipNames = ['Rectangle', 'Background'];
             
-            // Store all objects globally
-            allSceneObjects = objects;
+            // Prefer objects that have children (groups/models), skip lights and flat shapes
+            const candidates = objects.filter(o => !skipTypes.includes(o.type) && !skipNames.includes(o.name));
+            const withChildren = candidates.filter(o => o.obj.children && o.obj.children.length > 0);
+            const model = withChildren[0] || candidates[0] || objects[0];
             
-            selectorSection.style.display = 'block';
-            dropdownOptions.innerHTML = '';
-            
-            // Add placeholder option at the top
-            const placeholderOption = document.createElement('div');
-            placeholderOption.className = 'dropdown-option dropdown-placeholder';
-            placeholderOption.setAttribute('data-value', '');
-            placeholderOption.textContent = 'Select object...';
-            placeholderOption.onclick = () => {
-                // Reset selection and show all objects
-                selectedObjectSpan.textContent = 'Select object...';
-                currentConfig.targetObject = null;
-                document.querySelectorAll('#object-dropdown-options .dropdown-option').forEach(opt => {
-                    opt.classList.remove('selected');
-                });
-                placeholderOption.classList.add('selected');
-                showAllObjects();
-                document.getElementById('object-dropdown-options').classList.remove('show');
-            };
-            placeholderOption.classList.add('selected');
-            dropdownOptions.appendChild(placeholderOption);
-            
-            // Add actual objects
-            objects.forEach((obj, index) => {
-                const option = document.createElement('div');
-                option.className = 'dropdown-option';
-                option.setAttribute('data-value', obj.name);
-                option.textContent = `${obj.name} (${obj.type})`;
-                option.onclick = () => selectTargetObject(obj.name, `${obj.name} (${obj.type})`);
-                
-                dropdownOptions.appendChild(option);
-            });
-            
-            // Keep the placeholder text visible by default
-            selectedObjectSpan.textContent = 'Select object...';
-            currentConfig.targetObject = null;
-        }
-
-        window.toggleObjectDropdown = function() {
-            const dropdown = document.getElementById('object-dropdown-options');
-            const allDropdowns = document.querySelectorAll('.dropdown-options');
-            
-            // Close other dropdowns first
-            allDropdowns.forEach(d => {
-                if (d !== dropdown) d.classList.remove('show');
-            });
-            
-            dropdown.classList.toggle('show');
-        };
-
-        window.selectTargetObject = function(objectName, displayText) {
-            currentConfig.targetObject = objectName;
-            
-            // Update selected text
-            document.getElementById('selected-object').textContent = displayText;
-            
-            // Update selected state in dropdown
-            const options = document.querySelectorAll('#object-dropdown-options .dropdown-option');
-            options.forEach(opt => {
-                if (opt.getAttribute('data-value') === objectName) {
-                    opt.classList.add('selected');
-                } else {
-                    opt.classList.remove('selected');
-                }
-            });
-            
-            // Close dropdown
-            document.getElementById('object-dropdown-options').classList.remove('show');
-            
-            // Store original object position
-            if (objectName !== 'placeholder' && splineApp) {
-                try {
-                    const targetObj = splineApp.findObjectByName(objectName);
-                    if (targetObj) {
-                        currentConfig.originalPosition = {
-                            x: targetObj.position.x,
-                            y: targetObj.position.y,
-                            z: targetObj.position.z
-                        };
-                        console.log('Stored original position:', currentConfig.originalPosition);
-                    }
-                } catch(e) {
-                    console.error('Error storing original position:', e);
-                }
+            if (model) {
+                currentConfig.targetObject = model.name;
+                console.log('[3DConfig] Auto-selected target object:', model.name, '(' + model.type + '), children:', model.obj.children?.length || 0);
             }
-            
-            // Hide all other objects
-            hideOtherObjects(objectName);
-            
-            console.log('Selected target object:', objectName);
-        };
-
-        // Function to hide all objects except the selected one
-        function hideOtherObjects(selectedObjectName) {
-            if (!splineApp || allSceneObjects.length === 0) {
-                console.warn('Cannot hide objects: splineApp or allSceneObjects not ready');
-                return;
-            }
-            
-            console.log('=== Hiding other objects, showing only:', selectedObjectName, '===');
-            console.log('Total objects to process:', allSceneObjects.length);
-            console.log('All scene objects:', allSceneObjects.map(o => o.name));
-            
-            allSceneObjects.forEach(objData => {
-                const shouldBeVisible = objData.name === selectedObjectName;
-                
-                console.log(`Processing: ${objData.name}, Should be visible: ${shouldBeVisible}`);
-                
-                try {
-                    // Method 1: Try using splineApp.findObjectByName
-                    let targetObj = null;
-                    try {
-                        targetObj = splineApp.findObjectByName(objData.name);
-                        if (targetObj) {
-                            console.log(`  Found via findObjectByName: ${objData.name}`);
-                        }
-                    } catch (e) {
-                        console.log(`  findObjectByName failed for ${objData.name}:`, e.message);
-                    }
-                    
-                    // Method 2: Use the stored object reference
-                    const obj = targetObj || objData.obj;
-                    
-                    if (!obj) {
-                        console.error(`  No object reference for ${objData.name}`);
-                        return;
-                    }
-                    
-                    // Set visibility recursively on object and all children
-                    function setVisibilityRecursive(node, visible, depth = 0) {
-                        if (!node || depth > 10) return;
-                        
-                        const indent = '  '.repeat(depth + 1);
-                        
-                        // Set visibility
-                        node.visible = visible;
-                        console.log(`${indent}├─ ${node.name || 'unnamed'}: visible = ${visible}`);
-                        
-                        // Recursively set for all children
-                        if (node.children && node.children.length > 0) {
-                            node.children.forEach(child => {
-                                setVisibilityRecursive(child, visible, depth + 1);
-                            });
-                        }
-                    }
-                    
-                    setVisibilityRecursive(obj, shouldBeVisible, 0);
-                    
-                    console.log(`✓ ${shouldBeVisible ? 'Showing' : 'Hiding'}: ${objData.name}`);
-                    
-                } catch (e) {
-                    console.error(`✗ Error setting visibility for ${objData.name}:`, e);
-                }
-            });
-            
-            // Force a render update - try multiple methods
-            try {
-                if (splineApp.emitEvent) {
-                    splineApp.emitEvent('update');
-                }
-                if (splineApp.emitEvent) {
-                    splineApp.emitEvent('render');
-                }
-                // Force re-render by updating canvas
-                if (splineApp._runtime && splineApp._runtime._renderer) {
-                    splineApp._runtime._renderer.render();
-                }
-            } catch (e) {
-                console.log('Render update attempt:', e.message);
-            }
-            
-            console.log('=== Visibility update complete ===');
-        }
-
-        // Function to show all objects (used when "Select object..." is chosen)
-        function showAllObjects() {
-            if (!splineApp || allSceneObjects.length === 0) {
-                console.warn('Cannot show all objects: splineApp or allSceneObjects not ready');
-                return;
-            }
-            
-            console.log('=== Showing all objects ===');
-            
-            allSceneObjects.forEach(objData => {
-                try {
-                    // Try using splineApp.findObjectByName first
-                    let targetObj = null;
-                    try {
-                        targetObj = splineApp.findObjectByName(objData.name);
-                    } catch (e) {
-                        // Fallback to stored reference
-                    }
-                    
-                    const obj = targetObj || objData.obj;
-                    
-                    if (!obj) {
-                        console.error(`  No object reference for ${objData.name}`);
-                        return;
-                    }
-                    
-                    // Set visibility recursively
-                    function setVisibilityRecursive(node, depth = 0) {
-                        if (!node || depth > 10) return;
-                        
-                        node.visible = true;
-                        
-                        if (node.children && node.children.length > 0) {
-                            node.children.forEach(child => setVisibilityRecursive(child, depth + 1));
-                        }
-                    }
-                    
-                    setVisibilityRecursive(obj, 0);
-                    console.log(`✓ Showing: ${objData.name}`);
-                    
-                } catch (error) {
-                    console.error(`✗ Error showing ${objData.name}:`, error);
-                }
-            });
-            
-            // Force a render update
-            try {
-                if (splineApp.emitEvent) {
-                    splineApp.emitEvent('update');
-                    splineApp.emitEvent('render');
-                }
-                if (splineApp._runtime && splineApp._runtime._renderer) {
-                    splineApp._runtime._renderer.render();
-                }
-            } catch (e) {
-                console.log('Render update attempt:', e.message);
-            }
-            
-            console.log('=== All objects shown ===');
         }
 
         // Apply transformation to object based on keyframes and scroll position
-        // This is ONLY used when Live Preview is ON to show scroll-based animation
         function applyTransformation() {
-            if (!splineApp || !currentConfig.targetObject) return;
+            const obj = getTargetObject();
+            if (!obj) return;
             
             const scrollPos = currentConfig.scrollPosition;
             const breakpoint = currentConfig.activeBreakpoint;
-            const keyframes = currentConfig.breakpoints[breakpoint].keyframes;
+            let keyframes = currentConfig.breakpoints[breakpoint].keyframes;
+            
+            // If current breakpoint has no keyframes, try all breakpoints
+            if (keyframes.length === 0) {
+                for (const bp of Object.keys(currentConfig.breakpoints)) {
+                    if (currentConfig.breakpoints[bp].keyframes.length > 0) {
+                        keyframes = currentConfig.breakpoints[bp].keyframes;
+                        console.log('[3DConfig] Live: using keyframes from', bp, 'breakpoint');
+                        break;
+                    }
+                }
+            }
             
             if (keyframes.length === 0) return;
             
-            // Find the target object in Spline
-            let targetObj = null;
-            try {
-                targetObj = splineApp.findObjectByName(currentConfig.targetObject);
-            } catch(e) {
-                console.error('Object not found:', currentConfig.targetObject);
+            // Sort keyframes by scroll position
+            const sorted = [...keyframes].sort((a, b) => a.position - b.position);
+            
+            // Before first keyframe: use first keyframe values
+            if (scrollPos <= sorted[0].position) {
+                const kf = sorted[0];
+                activeTransform = {
+                    posX: kf.posX, posY: kf.posY, posZ: kf.posZ,
+                    rotX: kf.rotX * Math.PI / 180,
+                    rotY: kf.rotY * Math.PI / 180,
+                    rotZ: kf.rotZ * Math.PI / 180
+                };
+                if (!currentConfig.livePreview) {
+                    forceApplyTransform(obj, activeTransform);
+                    startContinuousApply();
+                }
                 return;
             }
             
-            if (!targetObj) return;
-            
-            // Sort keyframes by position
-            const sorted = [...keyframes].sort((a, b) => a.position - b.position);
-            
-            // Find previous and next keyframes
-            let prev = sorted[0];
-            let next = sorted[0];
-            
-            for (let i = 0; i < sorted.length; i++) {
-                if (sorted[i].position <= scrollPos) {
-                    prev = sorted[i];
+            // After last keyframe: use last keyframe values
+            if (scrollPos >= sorted[sorted.length - 1].position) {
+                const kf = sorted[sorted.length - 1];
+                activeTransform = {
+                    posX: kf.posX, posY: kf.posY, posZ: kf.posZ,
+                    rotX: kf.rotX * Math.PI / 180,
+                    rotY: kf.rotY * Math.PI / 180,
+                    rotZ: kf.rotZ * Math.PI / 180
+                };
+                if (!currentConfig.livePreview) {
+                    forceApplyTransform(obj, activeTransform);
+                    startContinuousApply();
                 }
-                if (sorted[i].position >= scrollPos) {
-                    next = sorted[i];
+                return;
+            }
+            
+            // Find the two keyframes we're between
+            let prev = sorted[0];
+            let next = sorted[sorted.length - 1];
+            for (let i = 0; i < sorted.length - 1; i++) {
+                if (scrollPos >= sorted[i].position && scrollPos <= sorted[i + 1].position) {
+                    prev = sorted[i];
+                    next = sorted[i + 1];
                     break;
                 }
             }
             
-            // Calculate interpolation factor
+            // Interpolation factor with smooth easing
             let t = 0;
-            if (prev !== next && next.position !== prev.position) {
+            if (next.position !== prev.position) {
                 t = (scrollPos - prev.position) / (next.position - prev.position);
-            } else if (scrollPos >= next.position) {
-                t = 1;
             }
-            
-            // Clamp t between 0 and 1
             t = Math.max(0, Math.min(1, t));
+            t = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
             
-            // Linear interpolation
             const lerp = (a, b) => a + (b - a) * t;
             
-            // Get original position (use current position as fallback)
-            const origin = currentConfig.originalPosition || { x: 0, y: 0, z: 0 };
+            activeTransform = {
+                posX: lerp(prev.posX, next.posX),
+                posY: lerp(prev.posY, next.posY),
+                posZ: lerp(prev.posZ, next.posZ),
+                rotX: lerp(prev.rotX, next.rotX) * Math.PI / 180,
+                rotY: lerp(prev.rotY, next.rotY) * Math.PI / 180,
+                rotZ: lerp(prev.rotZ, next.rotZ) * Math.PI / 180
+            };
             
-            // Apply position as offset from original position
-            targetObj.position.set(
-                origin.x + lerp(prev.posX, next.posX),  // X: horizontal (left/right)
-                origin.y + lerp(prev.posY, next.posY),  // Y: vertical (up/down)
-                origin.z + lerp(prev.posZ, next.posZ)   // Z: depth (forward/back)
-            );
-            
-            // Apply rotation (convert degrees to radians)
-            targetObj.rotation.set(
-                lerp(prev.rotX, next.rotX) * Math.PI / 180,
-                lerp(prev.rotY, next.rotY) * Math.PI / 180,
-                lerp(prev.rotZ, next.rotZ) * Math.PI / 180
-            );
+            if (!currentConfig.livePreview) {
+                forceApplyTransform(obj, activeTransform);
+                startContinuousApply();
+            }
         }
 
         window.setBackgroundMode = function(mode) {
@@ -2867,113 +2431,40 @@
             document.querySelectorAll('.bg-toggle button').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
             
-            document.getElementById('bg-color-section').style.display = mode === 'color' ? 'flex' : 'none';
-            document.getElementById('bg-picture-section').style.display = mode === 'picture' ? 'flex' : 'none';
+            document.getElementById('bg-color-section').style.display = mode === 'color' ? 'block' : 'none';
+            document.getElementById('bg-picture-section').style.display = mode === 'picture' ? 'block' : 'none';
             
             // Apply the appropriate background
             if (mode === 'color') {
                 document.body.style.backgroundImage = 'none';
                 document.body.style.background = currentConfig.backgroundColor || '#0a0a0f';
-                // Add scrollable class for color mode with default height
-                document.documentElement.classList.add('scrollable');
-                document.body.classList.add('scrollable');
-                document.body.style.minHeight = '6000px';
+                // Remove scrollable class for color mode
+                document.documentElement.classList.remove('scrollable');
+                document.body.classList.remove('scrollable');
             } else if (mode === 'picture') {
                 if (currentConfig.backgroundImage) {
-                    document.body.style.backgroundImage = `url(${currentConfig.backgroundImage})`;
-                    document.body.style.backgroundSize = 'contain';
-                    document.body.style.backgroundPosition = 'center top';
-                    document.body.style.backgroundRepeat = 'no-repeat';
-                    document.body.style.backgroundAttachment = 'scroll';
+                    const img = new Image();
+                    img.onload = () => {
+                        const aspectRatio = img.height / img.width;
+                        const pageHeight = window.innerWidth * aspectRatio;
+                        document.body.style.backgroundImage = `url(${currentConfig.backgroundImage})`;
+                        document.body.style.backgroundSize = '100% auto';
+                        document.body.style.backgroundPosition = 'center top';
+                        document.body.style.backgroundRepeat = 'no-repeat';
+                        document.body.style.backgroundAttachment = 'scroll';
+                        document.body.style.minHeight = pageHeight + 'px';
+                    };
+                    img.src = currentConfig.backgroundImage;
                 }
-                // Add scrollable class for picture mode
                 document.documentElement.classList.add('scrollable');
                 document.body.classList.add('scrollable');
-                document.body.style.minHeight = '800vh';
             }
         };
 
-        // Background color input - update preview as user types
-        document.getElementById('bg-color-hex').addEventListener('input', (e) => {
-            const value = e.target.value;
-            // Only update preview if it's a valid hex color
-            if (/^#[0-9A-Fa-f]{6}$/.test(value) || /^#[0-9A-Fa-f]{3}$/.test(value)) {
-                document.getElementById('color-preview').style.background = value;
-            }
+        document.getElementById('bg-color').addEventListener('change', (e) => {
+            currentConfig.backgroundColor = e.target.value;
+            document.body.style.background = e.target.value;
         });
-
-        // Apply background color
-        window.applyBackgroundColor = function() {
-            const colorInput = document.getElementById('bg-color-hex');
-            let colorValue = colorInput.value.trim();
-            
-            // Add # if missing
-            if (!colorValue.startsWith('#')) {
-                colorValue = '#' + colorValue;
-                colorInput.value = colorValue;
-            }
-            
-            // Validate hex color
-            if (/^#[0-9A-Fa-f]{6}$/.test(colorValue) || /^#[0-9A-Fa-f]{3}$/.test(colorValue)) {
-                currentConfig.backgroundColor = colorValue;
-                document.body.style.background = colorValue;
-                document.getElementById('color-preview').style.background = colorValue;
-                
-                // Show success feedback
-                const btn = event.target;
-                const originalText = btn.textContent;
-                btn.textContent = '✓ Applied';
-                setTimeout(() => {
-                    btn.textContent = originalText;
-                }, 1000);
-            } else {
-                // Show error feedback
-                const btn = event.target;
-                const originalText = btn.textContent;
-                btn.textContent = 'Invalid';
-                btn.style.background = '#ff4d6d';
-                setTimeout(() => {
-                    btn.textContent = originalText;
-                    btn.style.background = '';
-                }, 1000);
-            }
-        };
-
-        // Background image handling
-        let pendingBackgroundImage = null;
-
-        // Function to trigger file selection
-        window.selectBackgroundImage = function() {
-            const btn = document.getElementById('bg-picture-btn');
-            if (btn.textContent === 'Select') {
-                // Open file picker
-                document.getElementById('bg-picture').click();
-            } else {
-                // Apply the selected image
-                applyBackgroundImage();
-            }
-        };
-
-        // Function to apply the background image
-        window.applyBackgroundImage = function() {
-            if (pendingBackgroundImage) {
-                currentConfig.backgroundImage = pendingBackgroundImage;
-                // Apply the background image
-                document.body.style.backgroundImage = `url(${pendingBackgroundImage})`;
-                document.body.style.backgroundSize = 'contain';
-                document.body.style.backgroundPosition = 'center top';
-                document.body.style.backgroundRepeat = 'no-repeat';
-                document.body.style.backgroundAttachment = 'scroll';
-                // Enable scrolling for picture background
-                document.documentElement.classList.add('scrollable');
-                document.body.classList.add('scrollable');
-                
-                // Reset button back to "Select" state
-                const btn = document.getElementById('bg-picture-btn');
-                btn.textContent = 'Select';
-                pendingBackgroundImage = null;
-            }
-        };
 
         document.getElementById('bg-picture').addEventListener('change', (e) => {
             const file = e.target.files[0];
@@ -2981,11 +2472,21 @@
                 document.getElementById('bg-picture-name').value = file.name;
                 const reader = new FileReader();
                 reader.onload = (event) => {
-                    // Store the image data temporarily
-                    pendingBackgroundImage = event.target.result;
-                    // Change button to "Apply"
-                    const btn = document.getElementById('bg-picture-btn');
-                    btn.textContent = 'Apply';
+                    currentConfig.backgroundImage = event.target.result;
+                    const img = new Image();
+                    img.onload = () => {
+                        const aspectRatio = img.height / img.width;
+                        const pageHeight = window.innerWidth * aspectRatio;
+                        document.body.style.backgroundImage = `url(${event.target.result})`;
+                        document.body.style.backgroundSize = '100% auto';
+                        document.body.style.backgroundPosition = 'center top';
+                        document.body.style.backgroundRepeat = 'no-repeat';
+                        document.body.style.backgroundAttachment = 'scroll';
+                        document.body.style.minHeight = pageHeight + 'px';
+                        document.documentElement.classList.add('scrollable');
+                        document.body.classList.add('scrollable');
+                    };
+                    img.src = event.target.result;
                 };
                 reader.readAsDataURL(file);
             }
@@ -2997,6 +2498,9 @@
 
         // Update scroll position indicator when scrolling
         window.addEventListener('scroll', () => {
+            const scrollSlider = document.getElementById('scroll-slider');
+            const scrollValue = document.getElementById('scroll-value');
+            
             if (scrollSlider && scrollValue && document.body.classList.contains('scrollable')) {
                 const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
                 const docHeight = document.documentElement.scrollHeight - window.innerHeight;
@@ -3006,7 +2510,6 @@
                 scrollValue.value = scrollPercent;
                 currentConfig.scrollPosition = scrollPercent;
                 
-                // Apply transformation if live preview is on
                 if (currentConfig.livePreview) {
                     applyTransformation();
                 }
@@ -3018,7 +2521,13 @@
             showToast('Configuration saved!');
         };
 
+        // ─── Download Modal & Code Generation ───
+        let downloadActiveTab = 'all';
+
         window.openDownloadModal = function() {
+            downloadActiveTab = 'all';
+            renderDownloadTabs();
+            renderDownloadCode();
             document.getElementById('download-modal').classList.add('show');
         };
 
@@ -3026,51 +2535,295 @@
             document.getElementById('download-modal').classList.remove('show');
         };
 
-        window.copyJSON = function() {
-            const jsonStr = JSON.stringify(currentConfig, null, 2);
-            navigator.clipboard.writeText(jsonStr).then(() => {
-                showToast('JSON copied to clipboard!');
-                closeDownloadModal();
-            }).catch(err => {
-                console.error('Failed to copy:', err);
-                showToast('Failed to copy JSON');
+        function renderDownloadTabs() {
+            const container = document.getElementById('download-bp-tabs');
+            const bps = Object.keys(currentConfig.breakpoints);
+            let html = `<button class="download-bp-tab download-bp-tab-all ${downloadActiveTab === 'all' ? 'active' : ''}" onclick="selectDownloadTab('all')">All Breakpoints</button>`;
+            bps.forEach(bp => {
+                const label = bp.charAt(0).toUpperCase() + bp.slice(1);
+                html += `<button class="download-bp-tab ${downloadActiveTab === bp ? 'active' : ''}" onclick="selectDownloadTab('${bp}')">${label}</button>`;
+            });
+            container.innerHTML = html;
+        }
+
+        window.selectDownloadTab = function(tab) {
+            downloadActiveTab = tab;
+            renderDownloadTabs();
+            renderDownloadCode();
+        };
+
+        window.copyDownloadCode = function() {
+            const code = document.getElementById('download-code-output').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                showToast('Code copied to clipboard!');
+            }).catch(() => {
+                const textarea = document.createElement('textarea');
+                textarea.value = code;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast('Code copied to clipboard!');
             });
         };
 
-        window.copyCSS = function() {
-            const breakpoint = document.getElementById('css-breakpoint-select').value;
-            const positions = currentConfig.breakpoints[breakpoint].positions;
-            
-            if (!positions || positions.length === 0) {
-                showToast('No positions defined for this breakpoint');
-                return;
+        function generateBreakpointCode(bpName, bpConfig) {
+            const label = bpName.charAt(0).toUpperCase() + bpName.slice(1);
+            const minW = bpConfig.minWidth;
+            const keyframes = bpConfig.keyframes;
+            const objName = currentConfig.targetObject || 'Group';
+            const splineUrl = currentConfig.splineUrl || 'YOUR_SPLINE_URL_HERE';
+            const suffix = bpName;
+
+            const keyframeObjects = keyframes.map((kf, i) => {
+                const id = 'kf_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                // Pre-convert screen-space offsets to world-space at export time
+                let wx = kf.posX, wy = kf.posY, wz = kf.posZ;
+                if (screenRight) {
+                    wx = kf.posX * screenRight.x + kf.posY * screenUp.x + kf.posZ * screenFwd.x;
+                    wy = kf.posX * screenRight.y + kf.posY * screenUp.y + kf.posZ * screenFwd.y;
+                    wz = kf.posX * screenRight.z + kf.posY * screenUp.z + kf.posZ * screenFwd.z;
+                }
+                wx = Math.round(wx * 100) / 100;
+                wy = Math.round(wy * 100) / 100;
+                wz = Math.round(wz * 100) / 100;
+                return `        {
+          "id": "${id}",
+          "name": "${kf.name || 'Position ' + (i + 1)}",
+          "scroll": ${kf.position},
+          "pos": { "x": ${wx}, "y": ${wy}, "z": ${wz} },
+          "rot": { "x": ${kf.rotX}, "y": ${kf.rotY}, "z": ${kf.rotZ} },
+          "op": 100,
+          "easing": "easeInOutQuad"
+        }`;
+            });
+
+            const mediaMin = minW > 0 ? `(min-width: ${minW}px)` : '';
+            const maxBps = Object.values(currentConfig.breakpoints)
+                .map(b => b.minWidth)
+                .filter(w => w > minW)
+                .sort((a, b) => a - b);
+            const nextMin = maxBps.length > 0 ? maxBps[0] : null;
+            const mediaMax = nextMin ? `(max-width: ${nextMin - 1}px)` : '';
+            let mediaQuery = '';
+            if (mediaMin && mediaMax) mediaQuery = `${mediaMin} and ${mediaMax}`;
+            else if (mediaMin) mediaQuery = mediaMin;
+            else if (mediaMax) mediaQuery = mediaMax;
+
+            // Bake the config tool's origin into the generated code for exact 1:1 match
+            const oPos = initialPos || { x: 0, y: 0, z: 0 };
+            const oRot = initialRot || { x: 0, y: 0, z: 0 };
+            // #region agent log
+            fetch('http://127.0.0.1:7245/ingest/125a7df1-7ac7-4f11-95c0-276433f98821',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'spline-tool.html:generateBreakpointCode',message:'Export baked values',data:{initialPosIsNull:initialPos===null,initialRotIsNull:initialRot===null,oPos,oRot,screenRight,bpName,keyframeCount:keyframes.length},timestamp:Date.now(),hypothesisId:'H1,H5'})}).catch(()=>{});
+            // #endregion
+
+            let code = `<!-- Elevia 3D Scroll Animation - ${label} (${mediaMin || 'all widths'}) -->
+<!--
+  Position values are RELATIVE OFFSETS from the object's original Spline position.
+  ORIGIN_POS / ORIGIN_ROT are baked from the config tool for exact match.
+-->
+<style>
+  ${mediaQuery ? `@media ${mediaQuery} {
+    ` : ''}  .spline-scroll-container-${suffix} {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 10;
+      pointer-events: none;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      box-sizing: border-box !important;
+    }
+    .spline-scroll-container-${suffix} canvas {
+      display: block !important;
+      width: 100% !important;
+      height: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: 0 !important;
+      max-width: none !important;
+      max-height: none !important;
+    }
+  ${mediaQuery ? `}` : ''}
+  .spline-scroll-container-${suffix} { display: none !important; }
+  ${mediaQuery ? `@media ${mediaQuery} { .spline-scroll-container-${suffix} { display: block !important; } }` : `.spline-scroll-container-${suffix} { display: block !important; }`}
+</style>
+
+<div class="spline-scroll-container-${suffix}">
+  <canvas id="spline-canvas-${suffix}"></canvas>
+</div>
+
+<script>
+(function(){
+  // #region agent log
+  console.log('[ELEVIA-3D] Embed script started for ${suffix}');
+  // #endregion
+
+  var CONFIG = {
+    objects: [{
+      name: "${objName}",
+      keyframes: [
+${keyframeObjects.join(',\n')}
+      ]
+    }]
+  };
+
+  var EASING = {
+    linear: function(t) { return t; },
+    easeInQuad: function(t) { return t * t; },
+    easeOutQuad: function(t) { return t * (2 - t); },
+    easeInOutQuad: function(t) { return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; }
+  };
+
+  var ORIGIN_POS = { x: ${Math.round(oPos.x * 1e6) / 1e6}, y: ${Math.round(oPos.y * 1e6) / 1e6}, z: ${Math.round(oPos.z * 1e6) / 1e6} };
+  var ORIGIN_ROT = { x: ${Math.round(oRot.x * 1e6) / 1e6}, y: ${Math.round(oRot.y * 1e6) / 1e6}, z: ${Math.round(oRot.z * 1e6) / 1e6} };
+
+  var app, objRef, offsets = { oX: 0, oY: 0, oZ: 0, rX: 0, rY: 0, rZ: 0 };
+
+  function getObj() {
+    if (objRef) return objRef;
+    try { objRef = app.findObjectByName(CONFIG.objects[0].name); } catch(e) {}
+    return objRef;
+  }
+
+  var targetOffsets = { oX: 0, oY: 0, oZ: 0, rX: 0, rY: 0, rZ: 0 };
+  var SMOOTH_SPEED = 0.10;
+  var lastTickTime = null;
+
+  function onScroll() {
+    if (!app) return;
+    var docH = document.body.scrollHeight - window.innerHeight;
+    var scroll = docH > 0 ? (window.scrollY / docH) * 100 : 0;
+
+    var kfs = CONFIG.objects[0].keyframes;
+    if (!kfs || kfs.length === 0) return;
+    var sorted = kfs.slice().sort(function(a,b) { return a.scroll - b.scroll; });
+
+    var prev = sorted[0], next = sorted[0];
+    for (var i = 0; i < sorted.length; i++) {
+      if (sorted[i].scroll <= scroll) prev = sorted[i];
+      if (sorted[i].scroll >= scroll && next.scroll < scroll) next = sorted[i];
+    }
+    if (next.scroll < scroll) next = sorted[sorted.length - 1];
+
+    var t = 0;
+    if (prev !== next && next.scroll !== prev.scroll) {
+      t = (scroll - prev.scroll) / (next.scroll - prev.scroll);
+    } else if (scroll >= next.scroll) { t = 1; }
+
+    var easeFn = EASING[next.easing] || EASING.linear;
+    t = easeFn(Math.max(0, Math.min(1, t)));
+    function lerp(a, b) { return a + (b - a) * t; }
+
+    targetOffsets.oX = lerp(prev.pos.x, next.pos.x);
+    targetOffsets.oY = lerp(prev.pos.y, next.pos.y);
+    targetOffsets.oZ = lerp(prev.pos.z, next.pos.z);
+    targetOffsets.rX = lerp(prev.rot.x, next.rot.x);
+    targetOffsets.rY = lerp(prev.rot.y, next.rot.y);
+    targetOffsets.rZ = lerp(prev.rot.z, next.rot.z);
+  }
+
+  function startLoop() {
+    function tick(timestamp) {
+      if (!lastTickTime) lastTickTime = timestamp;
+      var dt = Math.min((timestamp - lastTickTime) / 16.667, 3);
+      var factor = 1 - Math.pow(1 - SMOOTH_SPEED, dt);
+      lastTickTime = timestamp;
+
+      offsets.oX += (targetOffsets.oX - offsets.oX) * factor;
+      offsets.oY += (targetOffsets.oY - offsets.oY) * factor;
+      offsets.oZ += (targetOffsets.oZ - offsets.oZ) * factor;
+      offsets.rX += (targetOffsets.rX - offsets.rX) * factor;
+      offsets.rY += (targetOffsets.rY - offsets.rY) * factor;
+      offsets.rZ += (targetOffsets.rZ - offsets.rZ) * factor;
+
+      var obj = getObj();
+      if (obj) {
+        obj.position.x = ORIGIN_POS.x + offsets.oX;
+        obj.position.y = ORIGIN_POS.y + offsets.oY;
+        obj.position.z = ORIGIN_POS.z + offsets.oZ;
+        obj.rotation.x = ORIGIN_ROT.x + offsets.rX * Math.PI / 180;
+        obj.rotation.y = ORIGIN_ROT.y + offsets.rY * Math.PI / 180;
+        obj.rotation.z = ORIGIN_ROT.z + offsets.rZ * Math.PI / 180;
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function init() {
+    var canvas = document.getElementById('spline-canvas-${suffix}');
+    // #region agent log
+    console.log('[ELEVIA-3D] canvas:', !!canvas, 'w:', window.innerWidth);
+    // #endregion
+    if (!canvas) return;
+    ${mediaQuery ? `
+    var w = window.innerWidth;
+    if (${minW > 0 ? 'w < ' + minW : 'false'}${nextMin ? ' || w >= ' + nextMin : ''}) return;
+    ` : ''}
+    import('https://unpkg.com/@splinetool/runtime/build/runtime.js').then(function(module) {
+      var Application = module.Application;
+      // #region agent log
+      console.log('[ELEVIA-3D] Spline runtime loaded, initializing...');
+      // #endregion
+      app = new Application(canvas);
+      app.load('${splineUrl}').then(function() {
+        // #region agent log
+        console.log('[ELEVIA-3D] Scene loaded! ORIGIN_POS:', ORIGIN_POS);
+        // #endregion
+        window.addEventListener('scroll', onScroll);
+        onScroll();
+        startLoop();
+      });
+    }).catch(function(err) {
+      console.error('[ELEVIA-3D] Failed to load:', err);
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+<\/script>`;
+            return code;
+        }
+
+        function generateAllBreakpointsCode() {
+            const parts = [];
+            for (const [bpName, bpConfig] of Object.entries(currentConfig.breakpoints)) {
+                if (bpConfig.keyframes.length > 0) {
+                    parts.push(generateBreakpointCode(bpName, bpConfig));
+                }
             }
+            if (parts.length === 0) {
+                return '<!-- No keyframes configured. Add positions in the config tool first. -->';
+            }
+            return parts.join('\n\n<!-- ═══════════════════════════════════════════ -->\n\n');
+        }
 
-            // Generate CSS code
-            let cssCode = `/* ${currentConfig.name} - ${breakpoint} breakpoint */\n\n`;
-            
-            positions.forEach((pos, index) => {
-                const scrollPercent = pos.scrollPosition;
-                cssCode += `/* Position ${index + 1} at ${scrollPercent}% scroll */\n`;
-                cssCode += `.target-object-${index + 1} {\n`;
-                cssCode += `  transform: \n`;
-                cssCode += `    translateX(${pos.x}px)\n`;
-                cssCode += `    translateY(${pos.y}px)\n`;
-                cssCode += `    translateZ(${pos.z}px)\n`;
-                cssCode += `    rotateX(${pos.rotationX}deg)\n`;
-                cssCode += `    rotateY(${pos.rotationY}deg)\n`;
-                cssCode += `    rotateZ(${pos.rotationZ}deg);\n`;
-                cssCode += `}\n\n`;
-            });
+        function renderDownloadCode() {
+            const output = document.getElementById('download-code-output');
+            const label = document.getElementById('code-block-label');
 
-            navigator.clipboard.writeText(cssCode).then(() => {
-                showToast('CSS copied to clipboard!');
-                closeDownloadModal();
-            }).catch(err => {
-                console.error('Failed to copy:', err);
-                showToast('Failed to copy CSS');
-            });
-        };
+            if (downloadActiveTab === 'all') {
+                label.textContent = 'ALL BREAKPOINTS — HTML / CSS / JS';
+                output.textContent = generateAllBreakpointsCode();
+            } else {
+                const bp = currentConfig.breakpoints[downloadActiveTab];
+                const bpLabel = downloadActiveTab.charAt(0).toUpperCase() + downloadActiveTab.slice(1);
+                label.textContent = `${bpLabel.toUpperCase()} — HTML / CSS / JS`;
+                if (bp.keyframes.length === 0) {
+                    output.textContent = `<!-- No keyframes configured for ${bpLabel} breakpoint. -->`;
+                } else {
+                    output.textContent = generateBreakpointCode(downloadActiveTab, bp);
+                }
+            }
+        }
 
         window.handleSignOut = function() {
             if (confirm('Are you sure you want to sign out?')) {
@@ -3148,9 +2901,6 @@
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 3000);
         }
-        
-        // Initialize button state on page load
-        updateAddPositionButton();
     </script>
 </body>
 </html>
