@@ -81,6 +81,8 @@ export interface DesignProject {
   sourceFile?: string;
   sourceFileUrl?: string;
   guide?: ProjectGuide;
+  /** Hand-off files uploaded by the seed (design/{id}/exports/...): builder sheets PDF, IFC */
+  exports?: Record<string, { storagePath: string; fileName: string; bytes?: number; label?: string }>;
   facility?: FacilityData;
   sceneLayers: Partial<SceneLayer>[];
   updatedAt?: Date;
@@ -102,6 +104,7 @@ export function projectFromData(id: string, data: Record<string, any>): DesignPr
     roomCount: data.roomCount ?? 0,
     sourceFile: data.sourceFile,
     sourceFileUrl: data.sourceFileUrl,
+    exports: data.exports && typeof data.exports === 'object' ? data.exports : undefined,
     guide: data.guide && data.guide.storagePath
       ? {
           storagePath: data.guide.storagePath,

@@ -401,7 +401,10 @@ export function Canvas({
       const room = e as RoomEntity;
       const roomType = ROOM_TYPES.find(rt => rt.id === room.roomTypeId);
       const fillColor = roomType?.color ?? '#6366f1';
-      drawRoom(ctx, room, fillColor, lineWidthPx, false, hoverId === room.id);
+      const planned = room.layer.startsWith('expansion-');
+      if (planned) { ctx.save(); ctx.setLineDash([8 * lineWidthPx, 5 * lineWidthPx]); }
+      drawRoom(ctx, room, planned ? '#e03030' : fillColor, lineWidthPx, false, hoverId === room.id);
+      if (planned) ctx.restore();
       visibleRooms.push(room);
     }
 
@@ -411,7 +414,8 @@ export function Canvas({
       const wall = e as WallEntity;
       if (wall.points.length < 2) continue;
       const kind = typeof wall.meta?.kind === 'string' ? (wall.meta!.kind as string) : 'wall';
-      const fill = kind === 'exterior' ? (isLight ? '#7a7a7a' : '#8a8a8a')
+      const fill = wall.layer.startsWith('expansion-') ? '#e0303099'
+        : kind === 'exterior' ? (isLight ? '#7a7a7a' : '#8a8a8a')
         : kind === 'lining' ? (isLight ? '#c8c8c8' : '#6b6b6b')
         : (isLight ? '#a8a8a8' : '#9CA3AF');
       ctx.strokeStyle = hoverId === wall.id ? SELECTION_COLOR : fill;
@@ -437,7 +441,10 @@ export function Canvas({
     for (const e of Object.values(currentEntities)) {
       if (e.type !== 'equipment' || !isVisible(e)) continue;
       const eq = e as EquipmentEntity;
+      const planned = eq.layer.startsWith('expansion-');
+      if (planned) { ctx.save(); ctx.setLineDash([6 * lineWidthPx, 4 * lineWidthPx]); }
       drawEquipment(ctx, eq, lineWidthPx, hoverId === eq.id, isLight);
+      if (planned) ctx.restore();
       visibleEquipment.push(eq);
     }
 
@@ -975,7 +982,7 @@ export function Canvas({
             pasted = { ...orig, id: newId };
           }
           // Copies of generated (existing-*) entities become editable design entities.
-          if (pasted.locked || pasted.layer.startsWith('existing-')) {
+          if (pasted.locked || pasted.layer.startsWith('existing-') || pasted.layer.startsWith('expansion-')) {
             pasted = { ...pasted, locked: false, layer: pasted.type === 'measure' ? 'measurements' : `${pasted.type}s` };
             if (pasted.type === 'equipment') pasted = { ...pasted, layer: 'equipment' };
           }

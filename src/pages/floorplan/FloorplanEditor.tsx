@@ -81,7 +81,7 @@ const PRESETS: LayerPreset[] = [
   { id: 'all', name: 'Everything' },
 ];
 
-const GROUP_ORDER = ['Existing - architecture', 'Existing - dimensions', 'Existing - fit-out', 'Existing - HVAC', 'Design'];
+const GROUP_ORDER = ['Existing - architecture', 'Existing - dimensions', 'Existing - fit-out', 'Existing - HVAC', 'Expansion', 'Design'];
 
 export function FloorplanEditor() {
   const { projectId: routeProjectId } = useParams<{ projectId: string }>();

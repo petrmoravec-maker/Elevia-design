@@ -5,7 +5,9 @@
  */
 
 import { useMemo, useState } from 'react';
-import { X, ZoomIn, Crosshair, Link2, Check, ExternalLink, Unlink, Search } from 'lucide-react';
+import { X, ZoomIn, Crosshair, Link2, Check, ExternalLink, Unlink, Search, Download } from 'lucide-react';
+import { ref as storageRef, getDownloadURL } from 'firebase/storage';
+import { storage } from '../../firebase';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useFloorplanStore } from '../../stores/useFloorplanStore';
 import type {
@@ -95,6 +97,29 @@ function entityTitle(e: FloorplanEntity): string {
 
 // ─── Facility summary ─────────────────────────────────────────────────────────
 
+/** Download button for a hand-off file in Storage (URL resolved on click). */
+function ExportLink({ file }: { file: { storagePath: string; fileName: string; bytes?: number; label?: string } }) {
+  const [busy, setBusy] = useState(false);
+  const open = async () => {
+    setBusy(true);
+    try {
+      const url = await getDownloadURL(storageRef(storage, file.storagePath));
+      window.open(url, '_blank', 'noopener');
+    } catch (e) {
+      console.warn('export not available', e);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const size = file.bytes ? ` · ${(file.bytes / 1024 / 1024).toFixed(1)} MB` : '';
+  const short = file.fileName.endsWith('.pdf') ? 'Builder sheets PDF' : file.fileName.endsWith('.ifc') ? 'IFC model' : file.fileName;
+  return (
+    <TextButton small disabled={busy} title={`${file.label ?? file.fileName}${size}`} onClick={() => void open()}>
+      <Download size={11} style={{ verticalAlign: -1, marginRight: 4 }} />{short}
+    </TextButton>
+  );
+}
+
 function FacilitySummary({
   project, entities, onSelect, onZoomTo,
 }: { project: DesignProject; entities: Record<string, FloorplanEntity>; onSelect: (id: string) => void; onZoomTo: (id: string) => void }) {
@@ -130,6 +155,11 @@ function FacilitySummary({
           {project.shared ? ' · shared facility plan' : ''}
         </div>
         {project.originNote && <div style={{ fontSize: 11, color: colors.textMuted, marginTop: 6 }}>{project.originNote}</div>}
+        {project.exports && Object.keys(project.exports).length > 0 && (
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+            {Object.entries(project.exports).map(([key, f]) => <ExportLink key={key} file={f} />)}
+          </div>
+        )}
       </Card>
 
       <SectionTitle>Totals</SectionTitle>

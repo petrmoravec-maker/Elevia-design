@@ -152,12 +152,20 @@ async function doSave(): Promise<void> {
 
     const nextRevision = currentRevision + 1;
 
+    // Reverse index "<collection>__<docId>" -> equipment id so the Lab can deep-link a device
+    // to the plan without parsing the scene (mirrors scripts/seed_design_project.cjs).
+    const bindings: Record<string, string> = {};
+    for (const e of Object.values(state.entities)) {
+      if (e.type === 'equipment' && e.binding?.collection && e.binding.docId) bindings[`${e.binding.collection}__${e.binding.docId}`] = e.id;
+    }
+
     await updateDoc(doc(db, 'design_projects', currentProjectId), {
       'scene.entities': entities,
       'scene.sceneRevision': nextRevision,
       'scene.updatedAt': serverTimestamp(),
       updatedAt: serverTimestamp(),
       roomCount: Object.values(state.entities).filter(e => e.type === 'room').length,
+      bindings,
     });
 
     currentRevision = nextRevision;

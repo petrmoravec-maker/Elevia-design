@@ -150,7 +150,8 @@ function Walls({ walls, doors, entities, selectedId, hovered, onSelect, onHover,
               onPointerOut={() => onHover?.(null)}
             >
               <boxGeometry args={[len, w.height, w.thickness]} />
-              <meshStandardMaterial color={active ? wallMat.sel : kind === 'exterior' ? wallMat.ext : wallMat.int} roughness={0.85} />
+              <meshStandardMaterial color={active ? wallMat.sel : w.layer.startsWith('expansion-') ? '#e06060' : kind === 'exterior' ? wallMat.ext : wallMat.int} roughness={0.85}
+                transparent={w.layer.startsWith('expansion-')} opacity={w.layer.startsWith('expansion-') ? 0.7 : 1} />
             </mesh>
           );
         });

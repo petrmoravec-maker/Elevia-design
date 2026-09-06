@@ -77,6 +77,9 @@ const EXISTING_LAYER_GROUPS: Record<string, string> = {
   'existing-equipment': 'Existing - fit-out',
   'existing-hvac': 'Existing - HVAC',
   'existing-notes': 'Existing - HVAC',
+  // model/expansion.yaml (planned extension) - one group, drawn red
+  'expansion-rooms': 'Expansion', 'expansion-walls': 'Expansion', 'expansion-doors': 'Expansion', 'expansion-dimensions': 'Expansion',
+  'expansion-tables': 'Expansion', 'expansion-lighting': 'Expansion', 'expansion-equipment': 'Expansion', 'expansion-hvac': 'Expansion', 'expansion-notes': 'Expansion',
 };
 
 /**
@@ -101,7 +104,7 @@ export function buildSceneLayers(
       visible: prev ? prev.visible : (d.visible ?? true),
       locked: d.locked ?? d.id.startsWith('existing-'),
       color: d.color ?? '#9B9B9B',
-      group: d.group ?? EXISTING_LAYER_GROUPS[d.id] ?? (d.id.startsWith('existing-') ? 'Existing' : 'Design'),
+      group: d.group ?? EXISTING_LAYER_GROUPS[d.id] ?? (d.id.startsWith('existing-') ? 'Existing' : d.id.startsWith('expansion-') ? 'Expansion' : 'Design'),
     });
   }
   for (const e of Object.values(entities)) {
