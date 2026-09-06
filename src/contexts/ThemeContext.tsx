@@ -88,7 +88,7 @@ export function useTheme() {
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
     const saved = localStorage.getItem('elevia-design-theme');
-    return (saved as Theme) || 'dark';
+    return (saved === 'dark' || saved === 'light') ? saved : 'dark';
   });
 
   useEffect(() => {

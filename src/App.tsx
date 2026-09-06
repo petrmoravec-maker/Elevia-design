@@ -84,6 +84,10 @@ export default function App() {
                   <FloorplanImport />
                 </PrivateRoute>
               } />
+              {import.meta.env.DEV && (
+                // Dev preview of facility-design/build.py outputs (see services/localProject.ts)
+                <Route path="/floorplan/local" element={<FloorplanEditor />} />
+              )}
               <Route path="/floorplan/:projectId" element={
                 <PrivateRoute>
                   <FloorplanEditor />

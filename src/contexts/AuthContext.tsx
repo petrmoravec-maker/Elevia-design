@@ -19,6 +19,11 @@ interface AuthContextType {
   currentUser: User | null;
   userData: UserData | null;
   loading: boolean;
+  /** Lab role id from the `roleId` custom claim ('' when the account has no Lab role). */
+  roleId: string;
+  /** Permissions of that role (roles/{roleId}.permissions); 'admin' bypasses the list. */
+  permissions: string[];
+  hasPermission: (permission: string) => boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -36,6 +41,8 @@ export function useAuth() {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<UserData | null>(null);
+  const [roleId, setRoleId] = useState('');
+  const [permissions, setPermissions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,6 +50,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCurrentUser(user);
       
       if (user) {
+        // Lab role: roleId custom claim -> roles/{roleId}.permissions (mirrors firestore.rules hasLabPermission)
+        try {
+          const token = await user.getIdTokenResult();
+          const claimRole = typeof token.claims.roleId === 'string' ? token.claims.roleId : '';
+          setRoleId(claimRole);
+          if (claimRole && claimRole !== 'admin') {
+            const roleDoc = await getDoc(doc(db, 'roles', claimRole));
+            const perms = roleDoc.exists() ? roleDoc.data().permissions : [];
+            setPermissions(Array.isArray(perms) ? perms.filter((p: unknown) => typeof p === 'string') : []);
+          } else {
+            setPermissions([]);
+          }
+        } catch (error) {
+          console.error('Error resolving Lab role:', error);
+          setRoleId('');
+          setPermissions([]);
+        }
         // Fetch user data from Firestore
         try {
           const userDoc = await getDoc(doc(db, 'users', user.uid));
@@ -62,6 +86,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       } else {
         setUserData(null);
+        setRoleId('');
+        setPermissions([]);
       }
       
       setLoading(false);
@@ -78,10 +104,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await signOut(auth);
   };
 
+  const hasPermission = (permission: string) =>
+    roleId === 'admin' || permissions.includes(permission);
+
   const value: AuthContextType = {
     currentUser,
     userData,
     loading,
+    roleId,
+    permissions,
+    hasPermission,
     login,
     logout,
   };

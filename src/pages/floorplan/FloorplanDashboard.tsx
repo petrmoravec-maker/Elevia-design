@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, query, orderBy, getDocs, where, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, where, deleteDoc, doc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -13,7 +13,10 @@ interface Project {
   updatedAt: Date;
   thumbnail?: string;
   roomCount?: number;
-  status?: 'draft' | 'in_progress' | 'completed';
+  status?: 'draft' | 'in_progress' | 'completed' | 'imported';
+  shared?: boolean;
+  kind?: string;
+  stage?: string;
 }
 
 export function FloorplanDashboard() {
@@ -21,7 +24,9 @@ export function FloorplanDashboard() {
   const { colors } = useTheme();
   const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
+  const [sharedProjects, setSharedProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [hoveredProject, setHoveredProject] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; projectId: string } | null>(null);
 
@@ -46,8 +51,7 @@ export function FloorplanDashboard() {
         orderBy('updatedAt', 'desc')
       );
       
-      const snapshot = await getDocs(q);
-      const projectList = snapshot.docs.map(doc => ({
+      const toProject = (doc: { id: string; data: () => any }): Project => ({
         id: doc.id,
         name: doc.data().name,
         description: doc.data().description,
@@ -56,11 +60,27 @@ export function FloorplanDashboard() {
         thumbnail: doc.data().thumbnail,
         roomCount: doc.data().roomCount || 0,
         status: doc.data().status || 'draft',
-      }));
-      
-      setProjects(projectList);
+        shared: doc.data().shared === true,
+        kind: doc.data().kind,
+        stage: doc.data().facility?.project?.stage,
+      });
+
+      const snapshot = await getDocs(q);
+      setProjects(snapshot.docs.map(toProject));
+
+      // Shared facility plans (seeded by scripts/seed_design_project.cjs). Readable with the
+      // view_facility_plan permission; a denied query just hides the section.
+      try {
+        const sharedSnap = await getDocs(query(collection(db, 'design_projects'), where('shared', '==', true)));
+        setSharedProjects(sharedSnap.docs.map(toProject).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()));
+      } catch (sharedErr) {
+        console.warn('Shared facility plans not available:', sharedErr);
+        setSharedProjects([]);
+      }
+      setError(null);
     } catch (error) {
       console.error('Error loading projects:', error);
+      setError('Failed to load projects. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -72,8 +92,34 @@ export function FloorplanDashboard() {
     try {
       await deleteDoc(doc(db, 'design_projects', projectId));
       setProjects(prev => prev.filter(p => p.id !== projectId));
+      setContextMenu(null);
     } catch (error) {
       console.error('Error deleting project:', error);
+      setError('Failed to delete project. Please try again.');
+    }
+  };
+
+  const handleDuplicateProject = async (projectId: string) => {
+    if (!currentUser) return;
+    const source = projects.find(p => p.id === projectId);
+    if (!source) return;
+
+    try {
+      const newName = `${source.name} (Copy)`;
+      await addDoc(collection(db, 'design_projects'), {
+        name: newName,
+        userId: currentUser.uid,
+        toolId: 'floorplan',
+        status: 'draft',
+        roomCount: source.roomCount || 0,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      setContextMenu(null);
+      await loadProjects();
+    } catch (error) {
+      console.error('Error duplicating project:', error);
+      setError('Failed to duplicate project. Please try again.');
     }
   };
 
@@ -251,6 +297,61 @@ export function FloorplanDashboard() {
       </header>
 
       <div style={styles.content}>
+        {error && (
+          <div style={{
+            backgroundColor: `${colors.error}15`,
+            border: `1px solid ${colors.error}30`,
+            borderRadius: '8px',
+            padding: '12px 16px',
+            color: colors.error,
+            fontSize: '13px',
+            marginBottom: '20px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}>
+            <span>{error}</span>
+            <button
+              style={{ background: 'none', border: 'none', color: colors.error, cursor: 'pointer', fontSize: '16px' }}
+              onClick={() => setError(null)}
+            >
+              ×
+            </button>
+          </div>
+        )}
+        {!loading && sharedProjects.length > 0 && (
+          <div style={{ marginBottom: 32 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+              Facility
+            </div>
+            <div style={styles.grid}>
+              {sharedProjects.map((project) => (
+                <div
+                  key={project.id}
+                  style={styles.card(hoveredProject === project.id)}
+                  onClick={() => navigate(`/floorplan/${project.id}`)}
+                  onMouseEnter={() => setHoveredProject(project.id)}
+                  onMouseLeave={() => setHoveredProject(null)}
+                >
+                  <div style={{ ...styles.thumbnail, fontSize: 40 }}>🏭</div>
+                  <div style={styles.cardContent}>
+                    <div style={styles.cardTitle}>{project.name}</div>
+                    <div style={styles.cardMeta}>
+                      <span>{formatDate(project.updatedAt)}</span>
+                      <span>•</span>
+                      <span>{project.roomCount} rooms</span>
+                      <span style={styles.statusBadge('in_progress')}>shared</span>
+                      {project.stage && <span style={{ color: colors.textMuted }}>{project.stage}</span>}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '28px 0 12px' }}>
+              My projects
+            </div>
+          </div>
+        )}
         {loading ? (
           <div style={styles.emptyState}>Loading...</div>
         ) : projects.length === 0 ? (
@@ -313,7 +414,7 @@ export function FloorplanDashboard() {
           </div>
           <div 
             style={styles.contextMenuItem}
-            onClick={() => {/* duplicate logic */}}
+            onClick={() => handleDuplicateProject(contextMenu.projectId)}
           >
             📋 Duplicate
           </div>

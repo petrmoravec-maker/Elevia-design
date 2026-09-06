@@ -78,17 +78,18 @@ export const BREAKER_SIZES: BreakerSize[] = [
   { amps: 60, poles: 2, maxWatts120: 0, maxWatts240: 11520 },
 ];
 
-export function getSymbolsByCategory(category: ElectricalSymbol['category']): ElectricalSymbol[] {
+export function getElectricalSymbolsByCategory(category: ElectricalSymbol['category']): ElectricalSymbol[] {
   return ELECTRICAL_SYMBOLS.filter(s => s.category === category);
 }
 
 export function suggestBreakerSize(watts: number, voltage: 120 | 240): BreakerSize | undefined {
-  const safetyFactor = 0.8; // 80% rule
+  // Note: maxWatts values are already pre-derated to 80% per NEC 80% continuous load rule.
+  // (e.g. 20A/120V = 1920W = 20 * 120 * 0.8). Do NOT multiply by 0.8 again.
   const sortedBreakers = BREAKER_SIZES
     .filter(b => voltage === 120 ? b.poles === 1 : b.poles === 2)
     .sort((a, b) => a.amps - b.amps);
   
   const maxWattsKey = voltage === 120 ? 'maxWatts120' : 'maxWatts240';
   
-  return sortedBreakers.find(b => b[maxWattsKey] * safetyFactor >= watts);
+  return sortedBreakers.find(b => b[maxWattsKey] >= watts);
 }

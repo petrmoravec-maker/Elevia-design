@@ -33,6 +33,7 @@ export const EQUIPMENT_CATEGORIES: EquipmentCategory[] = [
   { id: 'processing', name: 'Processing', icon: '⚙️' },
   { id: 'ventilation', name: 'Ventilation', icon: '🌀' },
   { id: 'co2', name: 'CO2 Systems', icon: '🫧' },
+  { id: 'fixtures', name: 'Fixtures & furniture', icon: '🧱' },
 ];
 
 export const DEFAULT_EQUIPMENT: Record<string, EquipmentItem[]> = {
@@ -78,6 +79,14 @@ export const DEFAULT_EQUIPMENT: Record<string, EquipmentItem[]> = {
     { id: 'co2_controller', name: 'CO2 Controller', category: 'co2', watts: 20, voltage: 120, drain: false, water: false },
     { id: 'co2_burner', name: 'CO2 Burner', category: 'co2', watts: 50, voltage: 120, drain: false, water: false },
   ],
+  // Items referenced by the generated facility plan (facility-design/build.py write_scene)
+  fixtures: [
+    { id: 'grow_table_1200x1100', name: 'Grow table 1200 × 1100', category: 'fixtures', watts: 0, voltage: 240, drain: false, water: false },
+    { id: 'hvac_unit_external', name: 'HVAC unit (VZT)', category: 'fixtures', watts: 0, voltage: 240, drain: true, water: false },
+    { id: 'water_tank', name: 'Water tank', category: 'fixtures', watts: 0, voltage: 240, drain: true, water: true },
+    { id: 'wc_basin', name: 'WC / wash basin', category: 'fixtures', watts: 0, voltage: 120, drain: true, water: true },
+    { id: 'equipment_generic', name: 'Equipment (unspecified)', category: 'fixtures', watts: 0, voltage: 240, drain: false, water: false },
+  ],
 };
 
 export function getEquipmentById(id: string): EquipmentItem | undefined {
@@ -94,4 +103,20 @@ export function getAllEquipment(): EquipmentItem[] {
 
 export function getEquipmentByCategory(categoryId: string): EquipmentItem[] {
   return DEFAULT_EQUIPMENT[categoryId] || [];
+}
+
+/** Default footprint [width, depth] in metres per category, used when an entity has no dimensions yet. */
+export const EQUIPMENT_FOOTPRINT: Record<string, [number, number]> = {
+  lighting: [1.2, 0.12],
+  hvac: [0.9, 0.3],
+  dehumidifier: [0.55, 1.0],
+  irrigation: [0.4, 0.4],
+  processing: [0.8, 0.6],
+  ventilation: [0.4, 0.4],
+  co2: [0.3, 0.3],
+  fixtures: [0.6, 0.6],
+};
+
+export function equipmentFootprint(category?: string): [number, number] {
+  return (category && EQUIPMENT_FOOTPRINT[category]) || [0.6, 0.6];
 }

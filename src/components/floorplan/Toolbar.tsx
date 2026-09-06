@@ -1,120 +1,99 @@
+import {
+  MousePointer2, Hand, Ruler, Square, Minus, DoorOpen, Wrench, Tag, Undo2, Redo2,
+  Maximize, Grid3x3, Magnet, Type as TypeIcon,
+} from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
-import type { EditorTool } from '../../pages/floorplan/FloorplanEditor';
+import type { EditorTool } from '../../stores/useFloorplanStore';
+import { IconButton } from './ui';
 
 interface ToolbarProps {
   activeTool: EditorTool;
   onToolChange: (tool: EditorTool) => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  /** Hide the drawing tools (viewer without edit rights) */
+  readOnly?: boolean;
+  onZoomToFit?: () => void;
+  showLabels?: boolean;
+  onToggleLabels?: () => void;
+  snapToGrid?: boolean;
+  onToggleSnap?: () => void;
+  showGrid?: boolean;
+  onToggleGrid?: () => void;
+  vertical?: boolean;
 }
 
 interface ToolButton {
   id: EditorTool;
-  icon: string;
+  icon: React.ReactNode;
   label: string;
   shortcut: string;
   group: 'navigation' | 'drawing';
 }
 
 const TOOLS: ToolButton[] = [
-  { id: 'select', icon: '↖', label: 'Select', shortcut: 'V', group: 'navigation' },
-  { id: 'pan', icon: '✋', label: 'Pan', shortcut: 'H', group: 'navigation' },
-  { id: 'measure', icon: '📏', label: 'Measure', shortcut: 'M', group: 'navigation' },
-  { id: 'room', icon: '⬜', label: 'Room', shortcut: 'R', group: 'drawing' },
-  { id: 'equipment', icon: '🔧', label: 'Equipment', shortcut: 'E', group: 'drawing' },
-  { id: 'electrical', icon: '⚡', label: 'Electrical', shortcut: 'L', group: 'drawing' },
-  { id: 'plumbing', icon: '💧', label: 'Plumbing', shortcut: 'P', group: 'drawing' },
+  { id: 'select', icon: <MousePointer2 size={16} />, label: 'Select / inspect', shortcut: 'V', group: 'navigation' },
+  { id: 'pan', icon: <Hand size={16} />, label: 'Pan (or drag with the middle button)', shortcut: 'H', group: 'navigation' },
+  { id: 'measure', icon: <Ruler size={16} />, label: 'Measure: click two points', shortcut: 'M', group: 'navigation' },
+  { id: 'room', icon: <Square size={16} />, label: 'Draw room', shortcut: 'R', group: 'drawing' },
+  { id: 'wall', icon: <Minus size={16} />, label: 'Draw wall', shortcut: 'W', group: 'drawing' },
+  { id: 'door', icon: <DoorOpen size={16} />, label: 'Place door', shortcut: 'D', group: 'drawing' },
+  { id: 'equipment', icon: <Wrench size={16} />, label: 'Place equipment', shortcut: 'E', group: 'drawing' },
+  { id: 'note', icon: <Tag size={16} />, label: 'Add note', shortcut: 'N', group: 'drawing' },
 ];
 
-export function Toolbar({ activeTool, onToolChange }: ToolbarProps) {
+export function Toolbar({
+  activeTool, onToolChange, onUndo, onRedo, readOnly = false, onZoomToFit,
+  showLabels = true, onToggleLabels, snapToGrid = true, onToggleSnap, showGrid = true, onToggleGrid, vertical = true,
+}: ToolbarProps) {
   const { colors } = useTheme();
-
   const navigationTools = TOOLS.filter(t => t.group === 'navigation');
   const drawingTools = TOOLS.filter(t => t.group === 'drawing');
 
-  const styles = {
-    container: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px',
-    } as const,
-    group: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '2px',
-      padding: '4px',
-      backgroundColor: colors.bg,
-      borderRadius: '8px',
-    } as const,
-    separator: {
-      width: '1px',
-      height: '24px',
+  const sep = (
+    <div style={{
+      width: vertical ? 20 : 1,
+      height: vertical ? 1 : 20,
       backgroundColor: colors.border,
-      margin: '0 8px',
-    } as const,
-    button: (isActive: boolean) => ({
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '36px',
-      height: '36px',
-      backgroundColor: isActive ? colors.accent : 'transparent',
-      border: 'none',
-      borderRadius: '6px',
-      color: isActive ? 'white' : colors.textSecondary,
-      fontSize: '16px',
-      cursor: 'pointer',
-      transition: 'all 0.15s',
-      position: 'relative' as const,
-    }),
-    tooltip: {
-      position: 'absolute' as const,
-      bottom: '-32px',
-      left: '50%',
-      transform: 'translateX(-50%)',
-      padding: '4px 8px',
-      backgroundColor: colors.bgPanel,
-      border: `1px solid ${colors.border}`,
-      borderRadius: '4px',
-      fontSize: '11px',
-      color: colors.text,
-      whiteSpace: 'nowrap' as const,
-      pointerEvents: 'none' as const,
-      zIndex: 100,
-      opacity: 0,
-      transition: 'opacity 0.15s',
-    },
-  };
+      margin: vertical ? '3px auto' : '0 3px',
+    }} />
+  );
 
   return (
-    <div style={styles.container}>
-      {/* Navigation Tools */}
-      <div style={styles.group}>
-        {navigationTools.map((tool) => (
-          <button
-            key={tool.id}
-            style={styles.button(activeTool === tool.id)}
-            onClick={() => onToolChange(tool.id)}
-            title={`${tool.label} (${tool.shortcut})`}
-          >
-            {tool.icon}
-          </button>
-        ))}
-      </div>
-
-      <div style={styles.separator} />
-
-      {/* Drawing Tools */}
-      <div style={styles.group}>
-        {drawingTools.map((tool) => (
-          <button
-            key={tool.id}
-            style={styles.button(activeTool === tool.id)}
-            onClick={() => onToolChange(tool.id)}
-            title={`${tool.label} (${tool.shortcut})`}
-          >
-            {tool.icon}
-          </button>
-        ))}
-      </div>
+    <div
+      role="toolbar"
+      aria-label="Tools"
+      style={{
+        display: 'flex',
+        flexDirection: vertical ? 'column' : 'row',
+        alignItems: 'center',
+        gap: 2,
+        padding: 4,
+        backgroundColor: colors.bgPanel,
+        border: `1px solid ${colors.border}`,
+        borderRadius: 8,
+        boxShadow: `0 2px 8px ${colors.shadow}`,
+      }}
+    >
+      {navigationTools.map(t => (
+        <IconButton key={t.id} title={`${t.label} (${t.shortcut})`} active={activeTool === t.id} onClick={() => onToolChange(t.id)}>{t.icon}</IconButton>
+      ))}
+      {!readOnly && (
+        <>
+          {sep}
+          {drawingTools.map(t => (
+            <IconButton key={t.id} title={`${t.label} (${t.shortcut})`} active={activeTool === t.id} onClick={() => onToolChange(t.id)}>{t.icon}</IconButton>
+          ))}
+          {sep}
+          <IconButton title="Undo (Cmd/Ctrl+Z)" onClick={onUndo}><Undo2 size={16} /></IconButton>
+          <IconButton title="Redo (Cmd/Ctrl+Shift+Z)" onClick={onRedo}><Redo2 size={16} /></IconButton>
+        </>
+      )}
+      {sep}
+      <IconButton title="Zoom to fit (F)" onClick={onZoomToFit}><Maximize size={16} /></IconButton>
+      <IconButton title="Labels and dimension values (T)" active={showLabels} onClick={onToggleLabels}><TypeIcon size={16} /></IconButton>
+      <IconButton title="Grid (G)" active={showGrid} onClick={onToggleGrid}><Grid3x3 size={16} /></IconButton>
+      <IconButton title="Snap to grid (S)" active={snapToGrid} onClick={onToggleSnap}><Magnet size={16} /></IconButton>
     </div>
   );
 }

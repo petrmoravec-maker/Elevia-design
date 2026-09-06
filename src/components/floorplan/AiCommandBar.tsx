@@ -1,10 +1,15 @@
 import { useState, useRef, useCallback } from 'react';
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '../../firebase';
 import { useTheme } from '../../contexts/ThemeContext';
 
 interface AiCommandBarProps {
   projectId: string;
+  onAction?: (action: ParsedAction) => void;
+}
+
+export interface ParsedAction {
+  type: 'createRoom' | 'placeEquipment' | 'addNote' | 'unknown';
+  params: Record<string, unknown>;
+  rawText: string;
 }
 
 interface CommandHistoryItem {
@@ -14,7 +19,76 @@ interface CommandHistoryItem {
   timestamp: Date;
 }
 
-export function AiCommandBar({ projectId }: AiCommandBarProps) {
+/**
+ * Parse a natural-language command into a structured action.
+ * This is a lightweight local parser that handles common facility planning phrases.
+ * Intended to be replaced with a Cloud Function (designAiChat) once deployed.
+ */
+function parseCommand(text: string): { response: string; action?: ParsedAction } {
+  const lower = text.toLowerCase().trim();
+
+  // "add a [room type] room [W]x[H]m?" e.g. "add a flower room 5x4m"
+  const roomMatch = lower.match(
+    /(?:add|create|draw|place)\s+(?:a\s+)?(?:new\s+)?(\w[\w\s]*?)\s+room(?:\s+(\d+(?:\.\d+)?)\s*[x×]\s*(\d+(?:\.\d+)?))?/
+  );
+  if (roomMatch) {
+    const roomTypeRaw = roomMatch[1].trim();
+    const width = roomMatch[2] ? parseFloat(roomMatch[2]) : undefined;
+    const height = roomMatch[3] ? parseFloat(roomMatch[3]) : undefined;
+    const roomTypeMap: Record<string, string> = {
+      flower: 'grow_flower', flowering: 'grow_flower',
+      veg: 'grow_veg', vegetative: 'grow_veg', vegetation: 'grow_veg',
+      clone: 'clone', cloning: 'clone', propagation: 'clone',
+      dry: 'dry', drying: 'dry',
+      cure: 'cure', curing: 'cure',
+      processing: 'processing', trim: 'processing', trimming: 'processing',
+      utility: 'utility', mechanical: 'utility',
+      storage: 'storage',
+      office: 'office',
+      bathroom: 'bathroom', restroom: 'bathroom',
+    };
+    const roomTypeId = roomTypeMap[roomTypeRaw] ?? 'grow_veg';
+    const sizeNote = width && height ? ` (${width}m × ${height}m)` : '';
+    return {
+      response: `Creating a ${roomTypeRaw} room${sizeNote}. Click on the canvas to place it, or switch to the Room tool to draw manually.`,
+      action: {
+        type: 'createRoom',
+        params: { roomTypeId, width, height },
+        rawText: text,
+      },
+    };
+  }
+
+  // "place [equipment]" e.g. "place a dehumidifier 180ppd in room 2"
+  const equipMatch = lower.match(/(?:place|add|install|put)\s+(?:a\s+)?(.+?)(?:\s+in\s+.+)?$/);
+  if (equipMatch) {
+    const equipDesc = equipMatch[1].trim();
+    return {
+      response: `To place equipment: switch to the Equipment tool (E), select "${equipDesc}" from the catalog, and click on the canvas to place it.`,
+      action: {
+        type: 'placeEquipment',
+        params: { description: equipDesc },
+        rawText: text,
+      },
+    };
+  }
+
+  // Help and info
+  if (lower.includes('help') || lower === '?') {
+    return {
+      response: 'Try commands like: "add a flower room 5x4m", "create a veg room", "place a dehumidifier". ' +
+        'You can also use the toolbar tools directly: Room (R), Wall (W), Equipment (E), Measure (M).',
+    };
+  }
+
+  return {
+    response: `Command understood: "${text}". Use the toolbar tools to draw rooms (R), walls (W), place equipment (E), or measure (M). ` +
+      'AI-powered commands will be available once the cloud service is connected.',
+    action: { type: 'unknown', params: {}, rawText: text },
+  };
+}
+
+export function AiCommandBar({ projectId: _projectId, onAction }: AiCommandBarProps) {
   const { colors } = useTheme();
   const inputRef = useRef<HTMLInputElement>(null);
   const [input, setInput] = useState('');
@@ -23,46 +97,37 @@ export function AiCommandBar({ projectId }: AiCommandBarProps) {
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState<CommandHistoryItem[]>([]);
   const [lastResponse, setLastResponse] = useState<string | null>(null);
+  const recognitionRef = useRef<any>(null);
 
   const handleSubmit = useCallback(async () => {
-    if (!input.trim() || isProcessing) return;
-
     const userMessage = input.trim();
+    if (!userMessage || isProcessing) return;
+
     setInput('');
     setIsProcessing(true);
     setLastResponse(null);
 
     try {
-      // Call Claude API via Cloud Function
-      const designAiChat = httpsCallable(functions, 'designAiChat');
-      const result = await designAiChat({
-        projectId,
-        message: userMessage,
-      });
+      const { response, action } = parseCommand(userMessage);
 
-      const response = result.data as { text: string; actions?: any[] };
-      
-      // Add to history
       setHistory(prev => [{
         id: Date.now().toString(),
         userMessage,
-        aiResponse: response.text,
+        aiResponse: response,
         timestamp: new Date(),
       }, ...prev].slice(0, 10));
 
-      setLastResponse(response.text);
+      setLastResponse(response);
 
-      // TODO: Execute actions on canvas
-      if (response.actions) {
-        // Apply actions to canvas
+      if (action && onAction) {
+        onAction(action);
       }
     } catch (error: any) {
-      console.error('AI command error:', error);
       setLastResponse(`Error: ${error.message || 'Failed to process command'}`);
     } finally {
       setIsProcessing(false);
     }
-  }, [input, projectId, isProcessing]);
+  }, [input, isProcessing, onAction]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -75,16 +140,21 @@ export function AiCommandBar({ projectId }: AiCommandBarProps) {
     }
   };
 
-  const handleVoiceStart = () => {
-    // Check for browser support
+  const handleVoiceToggle = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      setLastResponse('Voice input not supported in this browser');
+      setLastResponse('Voice input is not supported in this browser. Try Chrome or Edge.');
       return;
     }
 
-    setIsRecording(true);
+    if (isRecording && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsRecording(false);
+      return;
+    }
+
     const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
     recognition.continuous = false;
     recognition.interimResults = false;
 
@@ -94,8 +164,7 @@ export function AiCommandBar({ projectId }: AiCommandBarProps) {
       setIsRecording(false);
     };
 
-    recognition.onerror = (event: any) => {
-      console.error('Speech recognition error:', event.error);
+    recognition.onerror = () => {
       setIsRecording(false);
     };
 
@@ -104,6 +173,7 @@ export function AiCommandBar({ projectId }: AiCommandBarProps) {
     };
 
     recognition.start();
+    setIsRecording(true);
   };
 
   const styles = {
@@ -174,7 +244,7 @@ export function AiCommandBar({ projectId }: AiCommandBarProps) {
       fontSize: '13px',
       color: colors.text,
       display: 'flex',
-      alignItems: 'center',
+      alignItems: 'flex-start',
       gap: '8px',
     } as const,
     historyPanel: {
@@ -205,9 +275,8 @@ export function AiCommandBar({ projectId }: AiCommandBarProps) {
       <div style={styles.bar}>
         <button
           style={styles.voiceButton(isRecording)}
-          onClick={handleVoiceStart}
-          disabled={isRecording}
-          title="Voice input (hold to speak)"
+          onClick={handleVoiceToggle}
+          title={isRecording ? 'Stop recording' : 'Voice input'}
         >
           🎤
         </button>
@@ -218,16 +287,16 @@ export function AiCommandBar({ projectId }: AiCommandBarProps) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={isProcessing ? 'Processing...' : 'Type a command or press / ...'}
+          placeholder={isProcessing ? 'Processing...' : 'Try: "add a flower room 5x4m" or press /'}
           style={styles.input}
           disabled={isProcessing}
         />
         <button
           style={styles.historyButton(showHistory)}
           onClick={() => setShowHistory(!showHistory)}
-          title="Show history"
+          title={showHistory ? 'Hide history' : 'Show history'}
         >
-          ▲
+          {showHistory ? '▼' : '▲'}
         </button>
         <button
           style={{
@@ -241,13 +310,12 @@ export function AiCommandBar({ projectId }: AiCommandBarProps) {
         </button>
       </div>
 
-      {/* Last response toast */}
       {lastResponse && (
         <div style={styles.toast}>
-          <span style={{ color: colors.accent }}>✓</span>
-          {lastResponse}
+          <span style={{ color: colors.accent, flexShrink: 0 }}>✓</span>
+          <span style={{ flex: 1 }}>{lastResponse}</span>
           <button
-            style={{ marginLeft: 'auto', background: 'none', border: 'none', color: colors.textMuted, cursor: 'pointer' }}
+            style={{ background: 'none', border: 'none', color: colors.textMuted, cursor: 'pointer', flexShrink: 0 }}
             onClick={() => setLastResponse(null)}
           >
             ×
@@ -255,12 +323,11 @@ export function AiCommandBar({ projectId }: AiCommandBarProps) {
         </div>
       )}
 
-      {/* History panel */}
       {showHistory && history.length > 0 && (
         <div style={styles.historyPanel}>
           {history.map((item, index) => (
-            <div 
-              key={item.id} 
+            <div
+              key={item.id}
               style={{
                 ...styles.historyItem,
                 borderBottom: index === history.length - 1 ? 'none' : undefined,

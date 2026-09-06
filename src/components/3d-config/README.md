@@ -7,6 +7,7 @@ This tool has been converted from a standalone HTML file (`spline-tool-v1.html`)
 Advanced 3D object configuration tool with scroll-based keyframe animations for Spline 3D scenes.
 
 ### Features
+
 - **Spline Scene Integration**: Load and interact with 3D scenes from Spline
 - **Keyframe Animation System**: Create scroll-based animations with position and rotation controls
 - **Responsive Breakpoints**: Configure animations for 5 breakpoints (Monitor, Desktop, Laptop, Tablet, Mobile)
@@ -63,12 +64,14 @@ Include this configuration in your commit message:
 ## Implementation Status
 
 ### ✅ Completed
+
 - Type definitions
 - CSS extraction and conversion
 - Basic component structure
 - Documentation
 
-### 🚧 In Progress  
+### 🚧 In Progress
+
 - Full React component conversion (due to large file size ~3000 lines)
 - Custom hooks for state management
 - Spline integration utilities
@@ -76,13 +79,11 @@ Include this configuration in your commit message:
 ### 📋 Next Steps
 
 1. **Complete Component Conversion**: The HTML file is very large. Conversion approach:
-   - Extract all JavaScript logic from `<script>` tags
-   - Convert global functions to React hooks and component methods
-   - Replace DOM queries with React refs
-   - Convert inline event handlers to React event handlers
-
+  - Extract all JavaScript logic from `<script>` tags
+  - Convert global functions to React hooks and component methods
+  - Replace DOM queries with React refs
+  - Convert inline event handlers to React event handlers
 2. **Test Integration**: Ensure the tool works within the main app
-
 3. **Optimize Performance**: Memoize expensive calculations, optimize renders
 
 ## Usage Example
@@ -100,6 +101,7 @@ export default function Config3DPage() {
 The original implementation is in `/spline-tool-v1.html` (~3158 lines).
 
 This is a production-ready tool with:
+
 - Obsidian Studio dark theme
 - Complete UI/UX implementation
 - All features fully functional
@@ -111,13 +113,12 @@ Due to the large size of the original file, a complete automated conversion woul
 
 1. Splitting into multiple smaller components
 2. Creating custom hooks for:
-   - Spline scene management
-   - Keyframe animation system
-   - Config state management
-   - Modal management
-   - File handling
+  - Spline scene management
+  - Keyframe animation system
+  - Config state management
+  - Modal management
+  - File handling
 3. Converting all window functions to React patterns
 4. Replacing document queries with refs/state
 
 The tool is ready for manual completion or can be used as standalone HTML until full React conversion is complete.
-

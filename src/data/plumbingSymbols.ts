@@ -66,7 +66,7 @@ export const CLEANOUT_REQUIREMENTS: CleanoutRequirements = {
   description: 'Cleanouts required every 50 feet and at direction changes',
 };
 
-export function getSymbolsByCategory(category: PlumbingSymbol['category']): PlumbingSymbol[] {
+export function getPlumbingSymbolsByCategory(category: PlumbingSymbol['category']): PlumbingSymbol[] {
   return PLUMBING_SYMBOLS.filter(s => s.category === category);
 }
 

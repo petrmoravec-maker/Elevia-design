@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { collection, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../firebase';
@@ -14,8 +14,10 @@ export function FloorplanImport() {
   const { currentUser } = useAuth();
   const { colors } = useTheme();
   const navigate = useNavigate();
-  const { projectId } = useParams();
+  // projectId from params is unused -- this page always creates a new project
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB
 
   const [projectName, setProjectName] = useState('');
   const [selectedMethod, setSelectedMethod] = useState<ImportMethod | null>(null);
@@ -30,6 +32,11 @@ export function FloorplanImport() {
     const file = e.target.files?.[0];
     if (file) {
       setError('');
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        setError(`File is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum size is 50 MB.`);
+        e.target.value = '';
+        return;
+      }
       setSelectedFile(file);
       if (!projectName) {
         setProjectName(file.name.replace(/\.(dwg|pdf|dxf)$/i, ''));
@@ -45,6 +52,10 @@ export function FloorplanImport() {
       
       if ((selectedMethod === 'cad' && (ext === 'dxf' || ext === 'dwg')) ||
           (selectedMethod === 'pdf' && ext === 'pdf')) {
+        if (file.size > MAX_FILE_SIZE_BYTES) {
+          setError(`File is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum size is 50 MB.`);
+          return;
+        }
         setError('');
         setSelectedFile(file);
         if (!projectName) {
@@ -100,12 +111,15 @@ export function FloorplanImport() {
         }
         
         setParseStatus('Uploading file...');
+        setUploadProgress(0);
         
         // Upload original file to storage
         const storagePath = `design/${newProjectId}/source/${selectedFile.name}`;
         const storageRef = ref(storage, storagePath);
         await uploadBytes(storageRef, selectedFile);
+        setUploadProgress(50);
         const downloadURL = await getDownloadURL(storageRef);
+        setUploadProgress(80);
         
         // Update project with file info and parsed data
         await updateDoc(doc(db, 'design_projects', newProjectId), {

@@ -19,6 +19,7 @@ import {
   Timestamp
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import { getEquipmentById } from '../data/equipmentLibrary';
 
 // Types
 export interface AIInteraction {
@@ -192,8 +193,8 @@ export async function analyzeInteractionsForPatterns(userId: string): Promise<vo
     if (mostUsed.length > 0) {
       patterns[roomType] = {};
       for (const [equipId] of mostUsed.slice(0, 5)) {
-        // Determine equipment category
-        const category = equipId.split('_')[0];
+        // Use the actual equipment category from the library, not a string prefix split
+        const category = getEquipmentById(equipId)?.category ?? equipId.split('_')[0];
         patterns[roomType][category] = equipId;
       }
     }
