@@ -75,13 +75,15 @@ const PRESETS: LayerPreset[] = [
   { id: 'overview', name: 'Overview', hint: 'Rooms, walls, doors, equipment - no dimensions or drawings' },
   { id: 'dimensions', name: 'Dimensions', hint: 'Rooms, walls, doors and every dimension string in mm' },
   { id: 'fitout', name: 'Fit-out', hint: 'Tables, lighting rows and equipment with the coordination drawing' },
-  { id: 'hvac', name: 'HVAC', hint: 'HVAC units and the D.1.4.5 duct drawing' },
+  { id: 'hvac', name: 'HVAC', hint: 'HVAC units, duct routes and the D.1.4.5 duct drawing' },
+  { id: 'electrical', name: 'Electrical', hint: 'Cable trays, circuits, water / drain routes and equipment' },
+  { id: 'expansion', name: 'Expansion', hint: 'Existing shell with everything from model/expansion.yaml (red, dashed)' },
   { id: 'drawings', name: 'Drawings', hint: 'All source drawings with the room outlines' },
   { id: 'model', name: 'Model only', hint: 'Everything generated from the model, no drawings' },
   { id: 'all', name: 'Everything' },
 ];
 
-const GROUP_ORDER = ['Existing - architecture', 'Existing - dimensions', 'Existing - fit-out', 'Existing - HVAC', 'Expansion', 'Design'];
+const GROUP_ORDER = ['Existing - architecture', 'Existing - dimensions', 'Existing - fit-out', 'Existing - HVAC', 'Existing - electrical', 'Expansion', 'Design'];
 
 export function FloorplanEditor() {
   const { projectId: routeProjectId } = useParams<{ projectId: string }>();
@@ -491,7 +493,9 @@ export function FloorplanEditor() {
       case 'overview': scene(['existing-rooms', 'existing-walls', 'existing-doors', 'existing-equipment', 'existing-hvac']); guide('none'); break;
       case 'dimensions': scene(['existing-rooms', 'existing-walls', 'existing-doors', 'existing-dimensions']); guide('none'); break;
       case 'fitout': scene(['existing-rooms', 'existing-walls', 'existing-doors', 'existing-tables', 'existing-lighting', 'existing-equipment']); guide(['KOORD']); break;
-      case 'hvac': scene(['existing-rooms', 'existing-walls', 'existing-doors', 'existing-hvac', 'existing-notes']); guide(['HVAC']); break;
+      case 'hvac': scene(['existing-rooms', 'existing-walls', 'existing-doors', 'existing-hvac', 'existing-notes', 'existing-ducts', 'expansion-rooms', 'expansion-walls', 'expansion-hvac', 'expansion-ducts']); guide(['HVAC']); break;
+      case 'electrical': scene(['existing-rooms', 'existing-walls', 'existing-doors', 'existing-electrical', 'existing-equipment', 'expansion-rooms', 'expansion-walls', 'expansion-electrical', 'expansion-equipment']); guide('none'); break;
+      case 'expansion': scene(['existing-rooms', 'existing-walls', 'existing-doors', ...sceneLayers.map(l => l.id).filter(id => id.startsWith('expansion-'))]); guide('none'); break;
       case 'drawings': scene(['existing-rooms', 'existing-doors']); guide('all'); break;
       case 'model': scene('all'); guide('none'); break;
       case 'all': default: scene('all'); guide('all'); break;

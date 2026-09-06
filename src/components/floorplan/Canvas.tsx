@@ -57,6 +57,11 @@ import {
 import { ROOM_TYPES } from '../../data/roomTypes';
 import { getEquipmentById, equipmentFootprint } from '../../data/equipmentLibrary';
 
+/** Colours of MEP route kinds (facility-design/build.py ROUTE_KINDS) */
+export const ROUTE_COLORS: Record<string, string> = {
+  supply: '#2060d0', extract: '#d06020', exhaust: '#a04000', cable_tray: '#b08000', circuit: '#806000', water: '#1090c0', drain: '#607080',
+};
+
 // Legacy Layer type from FloorplanEditor (for DXF layer visibility)
 interface DxfLayer {
   id: string;
@@ -391,6 +396,7 @@ export function Canvas({
     const lineWidthPx = 1 / ppm; // 1 CSS pixel in world units
     const toScreen = (x: number, y: number): [number, number] => [cx + x * ppm, cy - y * ppm];
     const visibleRooms: RoomEntity[] = [];
+    const visibleRoutes: WallEntity[] = [];
     const visibleEquipment: EquipmentEntity[] = [];
     const visibleDims: MeasureEntity[] = [];
     const hoverId = hoverIdRef.current;
@@ -414,6 +420,23 @@ export function Canvas({
       const wall = e as WallEntity;
       if (wall.points.length < 2) continue;
       const kind = typeof wall.meta?.kind === 'string' ? (wall.meta!.kind as string) : 'wall';
+      if (kind === 'duct' || kind === 'cable') {
+        // MEP route: true width, kind colour, dashed when planned
+        ctx.save();
+        ctx.strokeStyle = hoverId === wall.id ? SELECTION_COLOR : ROUTE_COLORS[String(wall.meta?.route_kind)] ?? '#556';
+        ctx.globalAlpha = 0.55;
+        ctx.lineWidth = Math.max(wall.thickness, 2 / ppm);
+        ctx.lineCap = 'butt';
+        ctx.lineJoin = 'round';
+        if (wall.layer.startsWith('expansion-')) ctx.setLineDash([6 * lineWidthPx, 4 * lineWidthPx]);
+        ctx.beginPath();
+        ctx.moveTo(wall.points[0][0], wall.points[0][1]);
+        wall.points.slice(1).forEach(([x, y]) => ctx.lineTo(x, y));
+        ctx.stroke();
+        ctx.restore();
+        visibleRoutes.push(wall);
+        continue;
+      }
       const fill = wall.layer.startsWith('expansion-') ? '#e0303099'
         : kind === 'exterior' ? (isLight ? '#7a7a7a' : '#8a8a8a')
         : kind === 'lining' ? (isLight ? '#c8c8c8' : '#6b6b6b')
@@ -500,6 +523,7 @@ export function Canvas({
     if (showLabels) {
       drawLabels(ctx, {
         rooms: visibleRooms,
+        routes: visibleRoutes,
         equipment: visibleEquipment,
         dims: visibleDims,
         toScreen,
@@ -1418,6 +1442,7 @@ function drawArrow(
 
 interface LabelCtx {
   rooms: RoomEntity[];
+  routes: WallEntity[];
   equipment: EquipmentEntity[];
   dims: MeasureEntity[];
   toScreen: (x: number, y: number) => [number, number];
@@ -1566,6 +1591,34 @@ function drawLabels(ctx: CanvasRenderingContext2D, L: LabelCtx) {
     if (placed.some(r => overlaps(r, rect))) continue;
     placed.push(rect);
     haloText(ctx, text, cx, cy, (L.selected.has(m.id) || L.hoverId === m.id) ? SELECTION_COLOR : dimColor, halo, ang);
+  }
+
+  // MEP routes: "SUP-3.1 DN250" along the longest segment from ~30 px/m
+  if (L.ppm >= 30) {
+    ctx.font = '600 10px system-ui, sans-serif';
+    for (const r of L.routes) {
+      let best: [Point2D, Point2D] | null = null, bestLen = 0;
+      for (let i = 0; i < r.points.length - 1; i++) {
+        const len = Math.hypot(r.points[i + 1][0] - r.points[i][0], r.points[i + 1][1] - r.points[i][1]);
+        if (len > bestLen) { bestLen = len; best = [r.points[i], r.points[i + 1]]; }
+      }
+      if (!best) continue;
+      const text = `${r.meta?.route ?? ''} ${r.meta?.size ?? ''}`.trim();
+      if (!text) continue;
+      const [ax, ay] = L.toScreen(best[0][0], best[0][1]);
+      const [bx, by] = L.toScreen(best[1][0], best[1][1]);
+      const tw = ctx.measureText(text).width;
+      if (tw + 8 > Math.hypot(bx - ax, by - ay) && !L.selected.has(r.id) && L.hoverId !== r.id) continue;
+      let ang = Math.atan2(by - ay, bx - ax);
+      if (ang > Math.PI / 2 || ang <= -Math.PI / 2) ang += Math.PI;
+      const mx = (ax + bx) / 2, my = (ay + by) / 2;
+      const off = Math.max(6, (r.thickness * L.ppm) / 2 + 6);
+      const lx = mx - Math.sin(ang) * off, ly = my + Math.cos(ang) * off;
+      const rect = { x: lx - tw / 2, y: ly - 6, w: tw, h: 12 };
+      if (!onScreen(rect) || placed.some(p => overlaps(p, rect))) continue;
+      placed.push(rect);
+      haloText(ctx, text, lx, ly, ROUTE_COLORS[String(r.meta?.route_kind)] ?? '#556', halo, ang);
+    }
   }
 
   // Equipment: name once the box is wide enough; existing fit-out (tables/lights) only when big.

@@ -77,9 +77,11 @@ const EXISTING_LAYER_GROUPS: Record<string, string> = {
   'existing-equipment': 'Existing - fit-out',
   'existing-hvac': 'Existing - HVAC',
   'existing-notes': 'Existing - HVAC',
+  'existing-ducts': 'Existing - HVAC',
+  'existing-electrical': 'Existing - electrical',
   // model/expansion.yaml (planned extension) - one group, drawn red
   'expansion-rooms': 'Expansion', 'expansion-walls': 'Expansion', 'expansion-doors': 'Expansion', 'expansion-dimensions': 'Expansion',
-  'expansion-tables': 'Expansion', 'expansion-lighting': 'Expansion', 'expansion-equipment': 'Expansion', 'expansion-hvac': 'Expansion', 'expansion-notes': 'Expansion',
+  'expansion-tables': 'Expansion', 'expansion-lighting': 'Expansion', 'expansion-equipment': 'Expansion', 'expansion-hvac': 'Expansion', 'expansion-notes': 'Expansion', 'expansion-ducts': 'Expansion', 'expansion-electrical': 'Expansion',
 };
 
 /**

@@ -5,7 +5,8 @@
  */
 
 import { useMemo, useState } from 'react';
-import { X, ZoomIn, Crosshair, Link2, Check, ExternalLink, Unlink, Search, Download } from 'lucide-react';
+import { X, ZoomIn, Crosshair, Link2, Check, ExternalLink, Unlink, Search, Download, FileText } from 'lucide-react';
+import { ROUTE_COLORS } from './Canvas';
 import { ref as storageRef, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../firebase';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -96,6 +97,23 @@ function entityTitle(e: FloorplanEntity): string {
 }
 
 // ─── Facility summary ─────────────────────────────────────────────────────────
+
+/** Opens the builder-sheet PDF at this room's page (A3, 1:50, all dimension strings). */
+function SheetLink({ file, page }: { file: { storagePath: string; fileName: string }; page: number }) {
+  const [busy, setBusy] = useState(false);
+  const open = async () => {
+    setBusy(true);
+    try {
+      const url = await getDownloadURL(storageRef(storage, file.storagePath));
+      window.open(`${url}#page=${page}`, '_blank', 'noopener');
+    } catch (e) { console.warn('sheet not available', e); } finally { setBusy(false); }
+  };
+  return (
+    <TextButton small disabled={busy} title={`Builder sheet - page ${page} of the A3 set (1:50, dimensions in mm)`} onClick={() => void open()}>
+      <FileText size={12} style={{ verticalAlign: -2, marginRight: 4 }} />Sheet p.{page}
+    </TextButton>
+  );
+}
 
 /** Download button for a hand-off file in Storage (URL resolved on click). */
 function ExportLink({ file }: { file: { storagePath: string; fileName: string; bytes?: number; label?: string } }) {
@@ -276,6 +294,9 @@ function RoomCard({
           <TextButton small onClick={copyLink} title="Copy a link that opens the plan focused on this room">
             {copied ? <Check size={12} style={{ verticalAlign: -2, marginRight: 4 }} /> : <Link2 size={12} style={{ verticalAlign: -2, marginRight: 4 }} />}{copied ? 'Copied' : 'Copy link'}
           </TextButton>
+          {project.exports?.sheetsPdf && typeof meta.sheet_page === 'number' && (
+            <SheetLink file={project.exports.sheetsPdf} page={meta.sheet_page as number} />
+          )}
         </div>
       </Card>
 
@@ -406,10 +427,35 @@ function RoomLink({ code, entities, onSelect }: { code: string; entities: Record
 }
 
 function WallCard({ wall, entities, onSelect }: { wall: WallEntity; entities: Record<string, FloorplanEntity>; onSelect: (id: string) => void }) {
+  const { colors } = useTheme();
   const len = wall.points.reduce((s, p, i) => i === 0 ? 0 : s + Math.hypot(p[0] - wall.points[i - 1][0], p[1] - wall.points[i - 1][1]), 0);
   const meta = wall.meta ?? {};
   const between = Array.isArray(meta.between) ? (meta.between as string[]) : [];
   const kindLabel: Record<string, string> = { exterior: 'Exterior wall (owner: 300 mm)', partition: 'Plasterboard partition', lining: 'Wall lining (předstěna)', wall: 'Wall' };
+  if (meta.kind === 'duct' || meta.kind === 'cable') {
+    const rk = String(meta.route_kind ?? '');
+    const kindName: Record<string, string> = { supply: 'Supply duct', extract: 'Extract duct', exhaust: 'Exhaust duct', cable_tray: 'Cable tray', circuit: 'Circuit', water: 'Water pipe', drain: 'Drain' };
+    return (
+      <>
+        <Card>
+          <div style={{ fontSize: 15, fontWeight: 600 }}>{String(meta.route ?? wall.id)} · {kindName[rk] ?? rk}</div>
+          <div style={{ marginTop: 6 }}>
+            {meta.size ? <Chip color={ROUTE_COLORS[rk]}>{String(meta.size)}</Chip> : null}
+            {wall.layer.startsWith('expansion-') ? <Chip color="#e03030">planned</Chip> : <Chip>existing</Chip>}
+          </div>
+          {typeof meta.note === 'string' && meta.note && <div style={{ fontSize: 12, color: colors.textSecondary, marginTop: 8 }}>{meta.note as string}</div>}
+        </Card>
+        <KV rows={[
+          ['Size', String(meta.size ?? '-')],
+          ['Section', <span><Mm m={wall.thickness} /> × <Mm m={wall.height} /></span>],
+          ['Route length', <Mm m={typeof meta.length === 'number' ? meta.length : len} />],
+          ['Underside', `${Number(meta.z ?? 0).toFixed(2)} m above floor`],
+          ['Top', `${(Number(meta.z ?? 0) + wall.height).toFixed(2)} m`],
+          ['Points', String(wall.points.length)],
+        ]} />
+      </>
+    );
+  }
   return (
     <>
       <Card>

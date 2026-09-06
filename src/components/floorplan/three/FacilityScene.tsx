@@ -21,6 +21,7 @@ import { polygonCentroid } from '../../../types/floorplan';
 import { ROOM_TYPES } from '../../../data/roomTypes';
 import { getEquipmentById } from '../../../data/equipmentLibrary';
 import { doorSegment } from '../../../stores/useFloorplanStore';
+import { ROUTE_COLORS } from '../Canvas';
 import type { LabDevice, LabRoom } from '../../../services/labInventory';
 import { findBound, lightsOnNow } from '../../../services/labInventory';
 
@@ -104,7 +105,7 @@ function Rooms({ rooms, selectedId, onSelect, onHover, showLabels, isLight, hove
               receiveShadow
             >
               <shapeGeometry args={[shape]} />
-              <meshStandardMaterial color={roomColor(r)} transparent opacity={active ? 0.55 : isLight ? 0.28 : 0.35} roughness={0.9} side={THREE.DoubleSide} />
+              <meshStandardMaterial color={r.layer.startsWith('expansion-') ? '#e03030' : roomColor(r)} transparent opacity={active ? 0.55 : isLight ? 0.28 : 0.35} roughness={0.9} side={THREE.DoubleSide} />
             </mesh>
             {showLabels && (
               <Html position={P(c[0], c[1], 0.05)} center zIndexRange={[5, 0]} style={{ pointerEvents: 'none', whiteSpace: 'nowrap' }}>
@@ -133,12 +134,32 @@ function Walls({ walls, doors, entities, selectedId, hovered, onSelect, onHover,
       {walls.map(w => {
         const kind = String(w.meta?.kind ?? 'wall');
         const active = selectedId === w.id || hovered === w.id;
+        const isRoute = kind === 'duct' || kind === 'cable';
+        const z0 = isRoute ? Number(w.meta?.z ?? 0) : 0;
+        const routeColor = ROUTE_COLORS[String(w.meta?.route_kind)] ?? '#667';
         return w.points.slice(1).map((b, i) => {
           const a = w.points[i];
           const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
           if (len < 1e-4) return null;
           const ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
           const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+          if (isRoute) {
+            const round = String(w.meta?.size ?? '').startsWith('DN');
+            return (
+              <group key={`${w.id}_${i}`} position={P(mx, my, z0 + w.height / 2)} rotation={[0, ang, 0]}>
+                <mesh rotation={round ? [0, 0, Math.PI / 2] : [0, 0, 0]} castShadow
+                  onClick={e => { e.stopPropagation(); onSelect(w.id); }}
+                  onPointerOver={e => { e.stopPropagation(); onHover?.(w.id); }}
+                  onPointerOut={() => onHover?.(null)}>
+                  {round
+                    ? <cylinderGeometry args={[w.thickness / 2, w.thickness / 2, len + w.thickness * 0.5, 20]} />
+                    : <boxGeometry args={[len + w.thickness * 0.5, w.height, w.thickness]} />}
+                  <meshStandardMaterial color={active ? '#3B9EFF' : routeColor} roughness={0.5} metalness={0.3}
+                    transparent={w.layer.startsWith('expansion-')} opacity={w.layer.startsWith('expansion-') ? 0.75 : 1} />
+                </mesh>
+              </group>
+            );
+          }
           return (
             <mesh
               key={`${w.id}_${i}`}
