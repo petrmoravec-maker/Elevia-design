@@ -12,6 +12,7 @@
     "@mlightcad/libredwg-web": "^0.6.4",
     "@react-three/drei": "^10.7.8",
     "@react-three/fiber": "^9.7.0",
+    "@react-three/postprocessing": "^3.1.1",
     "dxf-parser": "^1.1.2",
     "firebase": "^11.7.1",
     "immer": "^11.1.4",
