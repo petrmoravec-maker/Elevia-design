@@ -57,6 +57,7 @@ export async function loadLocalProject(): Promise<LocalProjectBundle> {
     facility: {
       project: scene.project ?? {},
       construction: scene.construction ?? {},
+      calcs: scene.calcs ?? undefined,
       legend: {
         rooms: legend.rooms ?? {},
         notes: legend.notes ?? [],

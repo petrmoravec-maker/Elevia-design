@@ -23,7 +23,7 @@ import type {
 } from '../../types/floorplan';
 import { ROOM_TYPES } from '../../data/roomTypes';
 import { getEquipmentById } from '../../data/equipmentLibrary';
-import type { DesignProject } from '../../services/designProject';
+import type { DesignProject, FacilityCalcs } from '../../services/designProject';
 import { fmtArea } from '../../services/designProject';
 import { computeRoomScope } from '../../services/roomScope';
 import { IconButton, TextButton, SectionTitle, KV, Chip, Card, Mm, panelStyle, panelHeaderStyle } from './ui';
@@ -98,6 +98,51 @@ function entityTitle(e: FloorplanEntity): string {
 
 // ─── Facility summary ─────────────────────────────────────────────────────────
 
+/** Engineering estimates (calcs.py): loads, moisture, air changes. Estimates, not a design. */
+function CalcsSummary({ calcs, onSelect, entities }: { calcs: FacilityCalcs; onSelect: (id: string) => void; entities: Record<string, FloorplanEntity> }) {
+  const { colors } = useTheme();
+  const S = calcs.summary;
+  const grow = calcs.rooms.filter(r => r.type === 'grow');
+  const roomEntity = (code: string) => Object.values(entities).find(e => e.type === 'room' && roomCode(e as RoomEntity) === code);
+  return (
+    <>
+      <SectionTitle>Loads & airflow (estimate)</SectionTitle>
+      <KV rows={[
+        ['Connected load', <span><b>{S.connected_kw} kW</b> · lighting {S.lighting_kw} · dehu {S.dehu_kw} · HVAC {S.hvac_kw}</span>],
+        ['Design load', <span><b>{S.design_kw} kW</b> · {S.design_current_a} A → main breaker ≥ {S.main_breaker_a} A</span>],
+        ['Lighting energy', `${S.daily_kwh_lights_12h} kWh/day at 12 h`],
+        ['Heat from lights + dehu', `${S.heat_kw} kW`],
+        ['Moisture', <span>{S.water_l_day} L/day from {S.canopy_m2} m² canopy · dehu capacity {S.dehu_capacity_l_day} L/day</span>],
+        ['Airflow (D.1.4.5)', `supply ${S.supply_m3h} · extract ${S.extract_m3h} m³/h`],
+      ]} />
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5, marginTop: 8 }}>
+        <thead>
+          <tr style={{ color: colors.textSecondary, textAlign: 'left' }}>
+            <th style={{ padding: '2px 4px' }}>Grow room</th><th style={{ padding: '2px 4px', textAlign: 'right' }}>kW</th><th style={{ padding: '2px 4px', textAlign: 'right' }}>W/m²</th>
+            <th style={{ padding: '2px 4px', textAlign: 'right' }}>ACH</th><th style={{ padding: '2px 4px', textAlign: 'right' }}>Dehu</th><th style={{ padding: '2px 4px' }}>Pressure</th>
+          </tr>
+        </thead>
+        <tbody>
+          {grow.map(r => {
+            const ent = roomEntity(r.id);
+            return (
+              <tr key={r.id} onClick={() => ent && onSelect(ent.id)} style={{ cursor: ent ? 'pointer' : 'default', borderTop: `1px solid ${colors.border}` }}>
+                <td style={{ padding: '3px 4px' }}><b>{r.id}</b>{r.lighting_estimated ? <span title="lighting estimated from W/m² - no fit-out traced" style={{ color: colors.textMuted }}> *</span> : null}</td>
+                <td style={{ padding: '3px 4px', textAlign: 'right' }}>{r.connected_kw.toFixed(1)}</td>
+                <td style={{ padding: '3px 4px', textAlign: 'right' }}>{r.lighting_w_m2}</td>
+                <td style={{ padding: '3px 4px', textAlign: 'right' }}>{r.ach_supply ?? '-'}</td>
+                <td style={{ padding: '3px 4px', textAlign: 'right', color: r.dehu_margin_pct !== null && r.dehu_margin_pct < 0 ? colors.error : undefined }}>{r.dehu_margin_pct !== null ? `${r.dehu_margin_pct > 0 ? '+' : ''}${r.dehu_margin_pct} %` : '-'}</td>
+                <td style={{ padding: '3px 4px' }}>{r.pressure ? <Chip color={r.pressure === 'positive' ? '#22c55e' : r.pressure === 'negative' ? '#ef4444' : undefined}>{r.balance_m3h! > 0 ? '+' : ''}{r.balance_m3h} m³/h</Chip> : '-'}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <div style={{ fontSize: 11, color: colors.textMuted, marginTop: 6 }}>Assumptions in existing.yaml → construction.engineering; * = lighting estimated. Verify with the engineer.</div>
+    </>
+  );
+}
+
 /** Opens the builder-sheet PDF at this room's page (A3, 1:50, all dimension strings). */
 function SheetLink({ file, page }: { file: { storagePath: string; fileName: string }; page: number }) {
   const [busy, setBusy] = useState(false);
@@ -130,7 +175,7 @@ function ExportLink({ file }: { file: { storagePath: string; fileName: string; b
     }
   };
   const size = file.bytes ? ` · ${(file.bytes / 1024 / 1024).toFixed(1)} MB` : '';
-  const short = file.fileName.endsWith('.pdf') ? 'Builder sheets PDF' : file.fileName.endsWith('.ifc') ? 'IFC model' : file.fileName;
+  const short = ({ 'facility_sheets.pdf': 'Builder sheets PDF', 'facility.ifc': 'IFC model', 'gmp_zoning.pdf': 'GMP zoning PDF', 'technical_report.pdf': 'Technical report PDF', 'calcs.md': 'Calcs (md)' } as Record<string, string>)[file.fileName] ?? file.fileName;
   return (
     <TextButton small disabled={busy} title={`${file.label ?? file.fileName}${size}`} onClick={() => void open()}>
       <Download size={11} style={{ verticalAlign: -1, marginRight: 4 }} />{short}
@@ -201,6 +246,8 @@ function FacilitySummary({
           ]} />
         </>
       )}
+
+      {fac?.calcs && <CalcsSummary calcs={fac.calcs} onSelect={onSelect} entities={entities} />}
 
       <SectionTitle>Rooms</SectionTitle>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>

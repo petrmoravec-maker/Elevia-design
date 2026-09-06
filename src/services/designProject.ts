@@ -42,6 +42,25 @@ export interface LegendRoom {
   hvac?: Record<string, unknown>;
 }
 
+export interface FacilityCalcRoom {
+  id: string; name: string; type: string; area_m2: number; volume_m3: number;
+  light_rows: number; lighting_kw: number; lighting_estimated?: boolean; lighting_w_m2: number; lighting_w_m2_canopy: number | null;
+  dehumidifiers: number; dehu_kw: number; hvac_units: number; hvac_kw: number; small_power_kw: number; connected_kw: number;
+  heat_kw: number; cooling_kw_available: number | null; canopy_m2: number; water_l_day: number; dehu_capacity_l_day: number; dehu_margin_pct: number | null;
+  supply_m3h: number; extract_m3h: number; ach_supply: number | null; ach_stated: number | null; balance_m3h: number | null;
+  pressure: 'positive' | 'negative' | 'neutral' | null;
+}
+
+export interface FacilityCalcs {
+  assumptions: Record<string, number>;
+  rooms: FacilityCalcRoom[];
+  summary: {
+    connected_kw: number; design_kw: number; design_current_a: number; main_breaker_a: number;
+    lighting_kw: number; dehu_kw: number; hvac_kw: number; heat_kw: number; canopy_m2: number;
+    water_l_day: number; dehu_capacity_l_day: number; supply_m3h: number; extract_m3h: number; grow_rooms: number; daily_kwh_lights_12h: number;
+  };
+}
+
 export interface FacilityData {
   project: { name?: string; stage?: string; revision?: string | number; default_height?: number };
   construction: {
@@ -56,6 +75,8 @@ export interface FacilityData {
     /** device envelopes from datasheets: { w, d, h, mount, source } */
     datasheets?: Record<string, { w: number; d: number; h: number; mount?: string; source?: string }>;
   };
+  /** Engineering estimates from facility-design/calcs.py (loads, ACH, moisture) */
+  calcs?: FacilityCalcs;
   legend: {
     rooms: Record<string, LegendRoom>;
     notes: string[];
@@ -120,6 +141,7 @@ export function projectFromData(id: string, data: Record<string, any>): DesignPr
       ? {
           project: data.facility.project ?? {},
           construction: data.facility.construction ?? {},
+          calcs: data.facility.calcs ?? undefined,
           legend: {
             rooms: data.facility.legend?.rooms ?? {},
             notes: data.facility.legend?.notes ?? [],

@@ -96,6 +96,7 @@ export function FloorplanEditor() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Project
+  const localLoadedRef = useRef(false);
   const [project, setProject] = useState<DesignProject | null>(null);
   const [loadState, setLoadState] = useState<LoadState>('loading');
   const [loadError, setLoadError] = useState('');
@@ -170,6 +171,7 @@ export function FloorplanEditor() {
     if (!projectId) return;
     const local = isLocalProject(projectId);
     if (!local && (authLoading || !currentUser)) return;
+    if (local && localLoadedRef.current) return; // dev preview: do not reload when auth resolves later
     let cancelled = false;
     setLoadState('loading');
     (async () => {
@@ -178,6 +180,7 @@ export function FloorplanEditor() {
           // Dev preview straight from facility-design/build.py outputs (no Firebase).
           const bundle = await loadLocalProject();
           if (cancelled) return;
+          localLoadedRef.current = true;
           setProject(bundle.project);
           useFloorplanStore.getState().setReadOnly(false);
           useFloorplanStore.getState().loadScene(bundle.entities as Record<string, FloorplanEntity>, bundle.project.sceneLayers);
@@ -294,8 +297,8 @@ export function FloorplanEditor() {
     didInitialFit.current = true;
     const focus = searchParams.get('focus');
     const target = focus ? resolveFocus(focus, useFloorplanStore.getState().entities) : null;
-    // wait a frame so the canvas wrapper has its size
-    requestAnimationFrame(() => {
+    // wait a tick so the canvas wrapper has its size (setTimeout, not rAF: rAF does not fire in a hidden tab)
+    const run = () => {
       if (target) {
         useFloorplanStore.getState().selectEntity(target);
         setSelectedElement(target);
@@ -303,7 +306,8 @@ export function FloorplanEditor() {
       } else {
         handleZoomToFit();
       }
-    });
+    };
+    if (canvasWrapperRef.current?.clientWidth) run(); else setTimeout(run, 0);
   }, [loadState, entityCount, dxfData, searchParams, handleZoomToFit, zoomToEntity]);
 
   // ─── Tools / selection ─────────────────────────────────────────────────────

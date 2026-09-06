@@ -76,7 +76,7 @@ interface CanvasProps {
   activeTool: EditorTool;
   layers: DxfLayer[];
   canvasState: CanvasState;
-  onCanvasStateChange: (state: CanvasState) => void;
+  onCanvasStateChange: (state: CanvasState | ((prev: CanvasState) => CanvasState)) => void;
   selectedElement: string | null;
   onSelectElement: (id: string | null) => void;
   dxfData?: ParsedDxf | null;
@@ -695,22 +695,14 @@ export function Canvas({
       const worldY = Math.round(worldPos[1] * 1000) / 1000;
 
       if (isPanning) {
-        onCanvasStateChange({
-          ...canvasState,
-          panX: e.clientX - panStartRef.current.x,
-          panY: e.clientY - panStartRef.current.y,
-          cursorX: worldX * PIXELS_PER_METER,
-          cursorY: worldY * PIXELS_PER_METER,
-        });
+        const panX = e.clientX - panStartRef.current.x, panY = e.clientY - panStartRef.current.y;
+        onCanvasStateChange(prev => ({ ...prev, panX, panY, cursorX: worldX * PIXELS_PER_METER, cursorY: worldY * PIXELS_PER_METER }));
         if (hoverIdRef.current) { hoverIdRef.current = null; onHover?.(null, rawX, rawY); }
         return;
       }
 
-      onCanvasStateChange({
-        ...canvasState,
-        cursorX: worldX * PIXELS_PER_METER,
-        cursorY: worldY * PIXELS_PER_METER,
-      });
+      // functional update: a stale closure here must never clobber a zoom/pan set elsewhere (zoom-to-fit)
+      onCanvasStateChange(prev => ({ ...prev, cursorX: worldX * PIXELS_PER_METER, cursorY: worldY * PIXELS_PER_METER }));
 
       // Box selection drag
       if (boxSelectStartRef.current && activeTool === 'select') {
@@ -800,7 +792,7 @@ export function Canvas({
         onActivateEntity(hit.id);
       } else {
         // Empty double-click: reset the view
-        onCanvasStateChange({ ...canvasState, zoom: 100, panX: 0, panY: 0 });
+        onCanvasStateChange(prev => ({ ...prev, zoom: 100, panX: 0, panY: 0 }));
       }
     }
   }, [activeTool, canvasState, onCanvasStateChange, screenToWorld, ppm, scope, onActivateEntity]);
