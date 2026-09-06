@@ -147,6 +147,10 @@ export function FloorplanEditor() {
   const [clock, setClock] = useState(0);
   const labDevices = useInventoryStore(s => s.devices);
   const labRooms = useInventoryStore(s => s.rooms);
+  const controlDevices = useInventoryStore(s => s.controlDevices);
+  const [autoOrbit, setAutoOrbit] = useState(false);
+  const [focusMode, setFocusMode] = useState(false);
+  const [presentation, setPresentation] = useState(false);
   useEffect(() => { const t = setInterval(() => setClock(c => c + 1), 60_000); return () => clearInterval(t); }, []);
   useEffect(() => {
     if (!currentUser) return;
@@ -592,6 +596,9 @@ export function FloorplanEditor() {
         case 'l': setShowLayers(v => !v); setShowInventory(false); break;
         case 'b': setShowInventory(v => !v); setShowLayers(false); break;
         case '2': setView('2d'); break;
+        case 'o': setAutoOrbit(v => !v); break;
+        case 'x': setFocusMode(v => !v); break;
+        case 'p': setPresentation(v => !v); break;
         case '3': setView('3d'); break;
         case 'i': setShowInspector(v => !v); break;
         case 'k': setShowLegend(v => !v); break;
@@ -623,6 +630,13 @@ export function FloorplanEditor() {
   }, [storeSelected]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const layerVisibleMap = useMemo(() => new Map(sceneLayers.map(l => [l.id, l.visible])), [sceneLayers]);
+  // Focus mode (3D): the selected room - or the room of the selected element - stays lit, the rest is dimmed
+  const focusIds = useMemo(() => {
+    if (!focusMode) return null;
+    const sel = selectedElement ? entities[selectedElement] : undefined;
+    const roomId = sel?.type === 'room' ? sel.id : sel?.type === 'equipment' ? (sel as EquipmentEntity).roomId : undefined;
+    return roomId ? computeRoomScope(entities, roomId) : null;
+  }, [focusMode, selectedElement, entities]);
 
   const handleUndo = () => (useFloorplanStore as any).temporal?.getState?.()?.undo?.();
   const handleRedo = () => (useFloorplanStore as any).temporal?.getState?.()?.redo?.();
@@ -712,6 +726,9 @@ export function FloorplanEditor() {
             {(['iso', 'top', 'orbit', 'walk'] as CameraPreset[]).map(p => (
               <TextButton key={p} small active={preset === p} onClick={() => { setPreset(p); sceneRef.current?.setPreset(p); }} title={`Camera: ${p}`}>{p}</TextButton>
             ))}
+            <TextButton small active={autoOrbit} onClick={() => setAutoOrbit(v => !v)} title="Auto-orbit for presentations (O)">auto-orbit</TextButton>
+            <TextButton small active={focusMode} onClick={() => setFocusMode(v => !v)} title="Dim everything outside the selected room (X)">focus</TextButton>
+            <TextButton small active={presentation} onClick={() => setPresentation(v => !v)} title="Hide panels (P)">present</TextButton>
             <IconButton title="Export PNG of the 3D view" onClick={exportPng}><Camera size={16} /></IconButton>
           </div>
         )}
@@ -730,7 +747,7 @@ export function FloorplanEditor() {
       </header>
 
       <main style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
-        {showInventory && (
+        {showInventory && !presentation && (
           <InventoryDrawer
             readOnly={readOnly}
             selectedEquipmentId={selectedEntity?.type === 'equipment' ? selectedEntity.id : null}
@@ -740,7 +757,7 @@ export function FloorplanEditor() {
             onClose={() => setShowInventory(false)}
           />
         )}
-        {showLayers && !showInventory && (
+        {showLayers && !showInventory && !presentation && (
           <LayerPanel
             groups={layerGroups}
             presets={PRESETS}
@@ -778,6 +795,9 @@ export function FloorplanEditor() {
                   heights={project.facility?.construction?.heights_m ?? {}}
                   devices={labDevices}
                   labRooms={labRooms}
+                  control={controlDevices}
+                  focusIds={focusIds}
+                  autoOrbit={autoOrbit}
                   clock={clock}
                 />
               </Suspense>
@@ -862,7 +882,7 @@ export function FloorplanEditor() {
             {showAi && !readOnly && (
               <AiCommandBar projectId={projectId!} onAction={(action) => { if (action.type === 'createRoom') handleToolChange('room'); }} />
             )}
-            <StatusBar
+            {!presentation && <StatusBar
               zoom={canvasState.zoom}
               cursorX={canvasState.cursorX}
               cursorY={canvasState.cursorY}
@@ -874,22 +894,22 @@ export function FloorplanEditor() {
               saveOverride={isLocalProject(projectId) ? 'Local preview - not saved' : undefined}
               message={statusMessage}
               counts={{ visible: visibleCount, total: entityCount }}
-            />
+            />}
           </div>
         </div>
 
         {/* Right: equipment catalog / properties (editable) / inspector */}
-        {showEquipmentCatalog && !readOnly && (
+        {showEquipmentCatalog && !readOnly && !presentation && (
           <EquipmentCatalog
             onSelectEquipment={(id) => { setPendingEquipmentId(id); setPendingBinding(null); setPendingDimensions(null); handleToolChange('equipment'); }}
             pendingEquipmentId={pendingEquipmentId}
             onClose={() => { setShowEquipmentCatalog(false); clearPending(); handleToolChange('select'); }}
           />
         )}
-        {!showEquipmentCatalog && showInspector && selectedEntity && selectedEditable && (
+        {!presentation && !showEquipmentCatalog && showInspector && selectedEntity && selectedEditable && (
           <PropertiesPanel elementId={selectedEntity.id} projectId={projectId!} onClose={() => selectAndShow(null)} />
         )}
-        {!showEquipmentCatalog && showInspector && project && !(selectedEntity && selectedEditable) && (
+        {!presentation && !showEquipmentCatalog && showInspector && project && !(selectedEntity && selectedEditable) && (
           <InspectorPanel
             project={project}
             selectedId={selectedEntity ? selectedEntity.id : null}

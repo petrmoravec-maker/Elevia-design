@@ -49,8 +49,33 @@ export interface LabRoom {
   activeBatchId?: string;
 }
 
+/** A relay / valve / light / dehumidifier channel on a controller with its live state. */
+export interface ControlDevice {
+  key: string;            // controllerId/deviceId
+  controllerId: string;
+  id: string;
+  name: string;
+  type: string;           // pump | dehumidifier | light | relay | co2_controller | sdi12_sensor | dimmer
+  roomName?: string;      // resolved from the controller's rooms subcollection or the device name
+  state: boolean;
+  mode?: string;
+  level?: number;
+  lastUpdated?: Date;
+}
+
+/** Live picture of one Lab room from its controller channels. */
+export interface RoomLive {
+  irrigationOn: boolean;
+  lightsOn: boolean | undefined;
+  dehuOn: number;
+  dehuTotal: number;
+  co2On: boolean;
+  devices: ControlDevice[];
+}
+
 interface InventoryState {
   devices: Record<string, LabDevice>;
+  controlDevices: Record<string, ControlDevice>;
   rooms: LabRoom[];
   loaded: Partial<Record<LabCollection | 'rooms', boolean>>;
   errors: Partial<Record<LabCollection | 'rooms', string>>;
@@ -139,9 +164,11 @@ function normController(id: string, x: Record<string, any>): LabDevice {
 
 let unsubs: Unsubscribe[] = [];
 let started = false;
+const ctlSubs = new Set<string>();
 
 export const useInventoryStore = create<InventoryState>()((set) => ({
   devices: {},
+  controlDevices: {},
   rooms: [],
   loaded: {},
   errors: {},
@@ -176,7 +203,40 @@ export const useInventoryStore = create<InventoryState>()((set) => ({
     };
     listen('devices', docs => mergeCollection('devices', docs.map(d => normDevice(d.id, d.data))));
     listen('network_devices', docs => mergeCollection('network_devices', docs.map(d => normNetwork(d.id, d.data))));
-    listen('controllers', docs => mergeCollection('controllers', docs.map(d => normController(d.id, d.data))));
+    listen('controllers', docs => {
+      mergeCollection('controllers', docs.map(d => normController(d.id, d.data)));
+      // live channels: controllers/{id}/devices (state written by the rule engine) + rooms (id -> name)
+      for (const c of docs) {
+        if (ctlSubs.has(c.id)) continue;
+        ctlSubs.add(c.id);
+        const roomNames = new Map<string, string>();
+        const apply = (devs: { id: string; data: Record<string, any> }[]) => set(s => {
+          const next = { ...s.controlDevices };
+          for (const k of Object.keys(next)) if (next[k].controllerId === c.id) delete next[k];
+          for (const d of devs) {
+            const x = d.data;
+            const nm: string = x.name ?? d.id;
+            const guess = /^(room\s*\d+|veg\s*room|dry\s*room\s*\d*|tech\s*room\s*\d*|processing|storage)/i.exec(nm)?.[1];
+            next[`${c.id}/${d.id}`] = {
+              key: `${c.id}/${d.id}`, controllerId: c.id, id: d.id, name: nm, type: x.type ?? 'relay',
+              roomName: roomNames.get(x.roomId) ?? (guess ? guess.replace(/\s+/g, ' ') : undefined),
+              state: x.state === true || (typeof x.level === 'number' && x.level > 0), mode: x.mode, level: typeof x.level === 'number' ? x.level : undefined,
+              lastUpdated: toDate(x.lastUpdated ?? x.updatedAt),
+            };
+          }
+          return { controlDevices: next };
+        });
+        let lastDevs: { id: string; data: Record<string, any> }[] = [];
+        unsubs.push(onSnapshot(collection(db, 'controllers', c.id, 'rooms'), snap => {
+          snap.docs.forEach(r => roomNames.set(r.id, r.data().name ?? r.id));
+          if (lastDevs.length) apply(lastDevs);
+        }, () => undefined));
+        unsubs.push(onSnapshot(collection(db, 'controllers', c.id, 'devices'), snap => {
+          lastDevs = snap.docs.map(d => ({ id: d.id, data: d.data() }));
+          apply(lastDevs);
+        }, err => console.warn(`labInventory: controllers/${c.id}/devices unavailable`, err.code ?? err.message)));
+      }
+    });
     listen('rooms', docs => set({
       rooms: docs
         .map(d => ({
@@ -190,6 +250,7 @@ export const useInventoryStore = create<InventoryState>()((set) => ({
   stop() {
     unsubs.forEach(u => u());
     unsubs = [];
+    ctlSubs.clear();
     started = false;
   },
 }));
@@ -245,4 +306,26 @@ export function suggestEquipmentId(dev: LabDevice): string {
   if (/scale|ohaus/.test(t)) return 'scale_industrial';
   if (/sensor|comet/.test(t)) return 'co2_controller';
   return 'equipment_generic';
+}
+
+const norm = (t: string) => t.toLowerCase().replace(/\s+/g, ' ').trim();
+
+/** Live channel states of a Lab room (matched by room name against the controller channels). */
+export function roomLive(room: LabRoom | undefined, control: Record<string, ControlDevice>): RoomLive | undefined {
+  if (!room) return undefined;
+  const target = norm(room.name);
+  const devs = Object.values(control).filter(d => d.roomName && norm(d.roomName) === target);
+  if (!devs.length) return undefined;
+  const isValve = (d: ControlDevice) => d.type === 'pump' || /valve|pump|irrig/i.test(d.name);
+  const isLightDev = (d: ControlDevice) => d.type === 'light' || d.type === 'dimmer' || /led|light/i.test(d.name);
+  const isDehu = (d: ControlDevice) => d.type === 'dehumidifier' || /dehu/i.test(d.name);
+  const lights = devs.filter(isLightDev);
+  return {
+    irrigationOn: devs.some(d => isValve(d) && d.state),
+    lightsOn: lights.length ? lights.some(d => d.state) : undefined,
+    dehuOn: devs.filter(d => isDehu(d) && d.state).length,
+    dehuTotal: devs.filter(isDehu).length,
+    co2On: devs.some(d => (d.type === 'co2_controller' || /co2/i.test(d.name)) && d.state),
+    devices: devs,
+  };
 }
