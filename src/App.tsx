@@ -13,7 +13,7 @@ import { FloorplanEditor } from './pages/floorplan/FloorplanEditor';
 import { FloorplanImport } from './pages/floorplan/FloorplanImport';
 
 // 3D Config Tool
-import Config3DPage from './pages/3d-config';
+import { Config3DDashboard, Config3DEditor } from './pages/3d-config';
 
 // Global styles (inline with Tailwind classes via style objects)
 const globalStyles = `
@@ -102,7 +102,12 @@ export default function App() {
               {/* 3D Config Tool */}
               <Route path="/3d-config" element={
                 <PrivateRoute>
-                  <Config3DPage />
+                  <Config3DDashboard />
+                </PrivateRoute>
+              } />
+              <Route path="/3d-config/:projectId" element={
+                <PrivateRoute>
+                  <Config3DEditor />
                 </PrivateRoute>
               } />
               
