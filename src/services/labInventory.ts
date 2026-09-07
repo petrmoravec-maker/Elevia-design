@@ -308,7 +308,7 @@ export function suggestEquipmentId(dev: LabDevice): string {
   return 'equipment_generic';
 }
 
-const norm = (t: string) => t.toLowerCase().replace(/\s+/g, ' ').trim();
+const norm = (t: string) => t.toLowerCase().replace(/[\s_-]+/g, '');   // 'DryRoom 3' == 'DRY ROOM 3'
 
 /** Live channel states of a Lab room (matched by room name against the controller channels). */
 export function roomLive(room: LabRoom | undefined, control: Record<string, ControlDevice>): RoomLive | undefined {

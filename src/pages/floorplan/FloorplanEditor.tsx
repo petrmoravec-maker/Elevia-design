@@ -32,7 +32,7 @@ import { EquipmentCatalog } from '../../components/floorplan/EquipmentCatalog';
 import { RoomTypePicker } from '../../components/floorplan/RoomTypePicker';
 import { IconButton, Chip, TextButton } from '../../components/floorplan/ui';
 import { InventoryDrawer } from '../../components/floorplan/InventoryDrawer';
-import type { FacilitySceneHandle, CameraPreset } from '../../components/floorplan/three/FacilityScene';
+import type { FacilitySceneHandle, CameraPreset, CutawayMode, Quality } from '../../components/floorplan/three/FacilityScene';
 const FacilityScene = lazy(() => import('../../components/floorplan/three/FacilityScene').then(m => ({ default: m.FacilityScene })));
 
 // Services
@@ -151,6 +151,12 @@ export function FloorplanEditor() {
   const [autoOrbit, setAutoOrbit] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
   const [presentation, setPresentation] = useState(false);
+  const [cutaway, setCutaway] = useState<CutawayMode>(() => (localStorage.getItem('elevia-3d-cutaway') as CutawayMode) || 'auto');
+  const [quality, setQuality] = useState<Quality>(() => (localStorage.getItem('elevia-3d-quality') as Quality) || 'balanced');
+  const [activeRoom3d, setActiveRoom3d] = useState<string | null>(null);
+  useEffect(() => { localStorage.setItem('elevia-3d-cutaway', cutaway); }, [cutaway]);
+  useEffect(() => { localStorage.setItem('elevia-3d-quality', quality); }, [quality]);
+  const degrade = useCallback(() => setQuality(q => (q === 'high' ? 'balanced' : 'fast')), []);
   useEffect(() => { const t = setInterval(() => setClock(c => c + 1), 60_000); return () => clearInterval(t); }, []);
   useEffect(() => {
     if (!currentUser) return;
@@ -584,7 +590,10 @@ export function FloorplanEditor() {
         if (e.key === 'k') { e.preventDefault(); searchRef.current?.focus(); }
         return;
       }
-      switch (e.key.toLowerCase()) {
+      const key = e.key.toLowerCase();
+      // in 3D, W/A/S/D/Q/E and the arrows move the camera (FacilityScene); drawing shortcuts are 2D-only
+      if (view === '3d' && ['w', 'a', 's', 'd', 'q', 'e', 'r', 'm', 'n'].includes(key)) return;
+      switch (key) {
         case 'v': handleToolChange('select'); break;
         case 'h': handleToolChange('pan'); break;
         case 'm': handleToolChange('measure'); break;
@@ -593,6 +602,7 @@ export function FloorplanEditor() {
         case 'd': handleToolChange('door'); break;
         case 'e': handleToolChange('equipment'); break;
         case 'n': handleToolChange('note'); break;
+        case 'c': if (view === '3d') setCutaway(c => (['auto', 'glass', 'solid', 'cut'] as CutawayMode[])[(['auto', 'glass', 'solid', 'cut'].indexOf(c) + 1) % 4]); break;
         case 'l': setShowLayers(v => !v); setShowInventory(false); break;
         case 'b': setShowInventory(v => !v); setShowLayers(false); break;
         case '2': setView('2d'); break;
@@ -620,7 +630,7 @@ export function FloorplanEditor() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleToolChange, handleZoomToFit, zoomToEntity, selectedElement, scopeRoomId, handleScopeRoom, activeTool, showLegend, selectAndShow, setSnapToGrid, pendingEquipmentId, clearPending]);
+  }, [handleToolChange, handleZoomToFit, zoomToEntity, selectedElement, scopeRoomId, handleScopeRoom, activeTool, showLegend, selectAndShow, setSnapToGrid, pendingEquipmentId, clearPending, view]);
 
   // Keep the local selection in sync with the store (Canvas selects directly)
   const storeSelected = useFloorplanStore(s => s.selectedIds);
@@ -799,6 +809,12 @@ export function FloorplanEditor() {
                   focusIds={focusIds}
                   autoOrbit={autoOrbit}
                   clock={clock}
+                  activeTool={activeTool}
+                  cutaway={cutaway}
+                  quality={quality}
+                  cameraKey={projectId}
+                  onActiveRoom={setActiveRoom3d}
+                  onDegrade={degrade}
                 />
               </Suspense>
             )}
@@ -828,8 +844,9 @@ export function FloorplanEditor() {
             </div>
 
             {/* Floating toolbar */}
-            {view === '2d' && <div style={{ position: 'absolute', top: 10, left: 10, zIndex: 10 }}>
+            {!presentation && <div style={{ position: 'absolute', top: 10, left: 10, zIndex: 10 }}>
               <Toolbar
+                navOnly={view === '3d'}
                 activeTool={activeTool}
                 onToolChange={handleToolChange}
                 onUndo={handleUndo}
@@ -845,8 +862,14 @@ export function FloorplanEditor() {
               />
             </div>}
             {view === '3d' && (
-              <div style={{ position: 'absolute', bottom: 10, left: 10, zIndex: 10, padding: '4px 10px', borderRadius: 8, fontSize: 11.5, backgroundColor: colors.bgPanel, border: `1px solid ${colors.border}`, color: colors.textSecondary }}>
-                Drag to orbit · right-drag to pan · wheel to zoom · click an element to inspect · T labels
+              <div style={{ position: 'absolute', bottom: 10, left: 10, zIndex: 10, display: 'flex', gap: 8, alignItems: 'center', padding: '4px 10px', borderRadius: 8, fontSize: 11.5, backgroundColor: colors.bgPanel, border: `1px solid ${colors.border}`, color: colors.textSecondary }}>
+                <span>{activeRoom3d && entities[activeRoom3d] ? <>Looking into <b style={{ color: colors.text }}>{(entities[activeRoom3d] as RoomEntity).name}</b> · </> : null}drag: rotate · hand / right-drag: pan · wheel: zoom · WASD / arrows: move · C: walls {cutaway}</span>
+                <span style={{ display: 'inline-flex', gap: 2 }}>
+                  {(['auto', 'glass', 'solid', 'cut'] as CutawayMode[]).map(m => <TextButton key={m} small active={cutaway === m} onClick={() => setCutaway(m)} title={{ auto: 'Fade the walls between you and the room you look into', glass: 'All partitions as glass', solid: 'Solid walls', cut: 'Cut all walls at 1.2 m' }[m]}>{m}</TextButton>)}
+                </span>
+                <span style={{ display: 'inline-flex', gap: 2 }}>
+                  {(['high', 'balanced', 'fast'] as Quality[]).map(q => <TextButton key={q} small active={quality === q} onClick={() => setQuality(q)} title="Render quality">{q}</TextButton>)}
+                </span>
               </div>
             )}
 

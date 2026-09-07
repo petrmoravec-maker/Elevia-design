@@ -327,6 +327,9 @@ function RoomCard({
           <span style={{ fontSize: 20, fontWeight: 700 }}>{code}</span>
           <span style={{ fontSize: 14, fontWeight: 600 }}>{roomDisplayName(room)}</span>
         </div>
+        {typeof meta.arch_name === 'string' && meta.arch_name && (meta.arch_name as string).toUpperCase() !== roomDisplayName(room).toUpperCase() && (
+          <div style={{ fontSize: 11.5, color: colors.textMuted, marginTop: 2 }}>Architect's drawing: {meta.arch_name as string}</div>
+        )}
         <div style={{ marginTop: 4 }}>
           {rt && <Chip color={rt.color}>{rt.name}</Chip>}
           {typeof meta.stage === 'string' && <Chip>{meta.stage as string}</Chip>}

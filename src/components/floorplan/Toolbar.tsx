@@ -21,6 +21,8 @@ interface ToolbarProps {
   showGrid?: boolean;
   onToggleGrid?: () => void;
   vertical?: boolean;
+  /** 3D view: only select / hand, zoom-to-fit and labels */
+  navOnly?: boolean;
 }
 
 interface ToolButton {
@@ -44,7 +46,7 @@ const TOOLS: ToolButton[] = [
 
 export function Toolbar({
   activeTool, onToolChange, onUndo, onRedo, readOnly = false, onZoomToFit,
-  showLabels = true, onToggleLabels, snapToGrid = true, onToggleSnap, showGrid = true, onToggleGrid, vertical = true,
+  showLabels = true, onToggleLabels, snapToGrid = true, onToggleSnap, showGrid = true, onToggleGrid, vertical = true, navOnly = false,
 }: ToolbarProps) {
   const { colors } = useTheme();
   const navigationTools = TOOLS.filter(t => t.group === 'navigation');
@@ -78,7 +80,7 @@ export function Toolbar({
       {navigationTools.map(t => (
         <IconButton key={t.id} title={`${t.label} (${t.shortcut})`} active={activeTool === t.id} onClick={() => onToolChange(t.id)}>{t.icon}</IconButton>
       ))}
-      {!readOnly && (
+      {!readOnly && !navOnly && (
         <>
           {sep}
           {drawingTools.map(t => (
@@ -92,8 +94,8 @@ export function Toolbar({
       {sep}
       <IconButton title="Zoom to fit (F)" onClick={onZoomToFit}><Maximize size={16} /></IconButton>
       <IconButton title="Labels and dimension values (T)" active={showLabels} onClick={onToggleLabels}><TypeIcon size={16} /></IconButton>
-      <IconButton title="Grid (G)" active={showGrid} onClick={onToggleGrid}><Grid3x3 size={16} /></IconButton>
-      <IconButton title="Snap to grid (S)" active={snapToGrid} onClick={onToggleSnap}><Magnet size={16} /></IconButton>
+      {!navOnly && <IconButton title="Grid (G)" active={showGrid} onClick={onToggleGrid}><Grid3x3 size={16} /></IconButton>}
+      {!navOnly && <IconButton title="Snap to grid (S)" active={snapToGrid} onClick={onToggleSnap}><Magnet size={16} /></IconButton>}
     </div>
   );
 }

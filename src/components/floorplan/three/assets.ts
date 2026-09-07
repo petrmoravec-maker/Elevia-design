@@ -50,16 +50,16 @@ function leafletShape(w: number): THREE.Shape {
   return s;
 }
 
-const LEAFLET = new THREE.ShapeGeometry(leafletShape(0.26), 2);
+const LEAFLET = new THREE.ShapeGeometry(leafletShape(0.30), 2);
 
 /** One palmate leaf (5 leaflets fanned) lying along +Z from the origin, drooping slightly. */
 function palmateLeaf(len: number, rand: () => number, dark: boolean): THREE.BufferGeometry {
   const parts: THREE.BufferGeometry[] = [];
-  const n = 5;
-  const green = new THREE.Color(dark ? '#2f6b34' : '#3f8f45').offsetHSL((rand() - 0.5) * 0.04, 0, (rand() - 0.5) * 0.08);
+  const n = 7;
+  const green = new THREE.Color(dark ? '#3a8a3f' : '#55b04a').offsetHSL((rand() - 0.5) * 0.04, 0.05, (rand() - 0.5) * 0.08);
   for (let i = 0; i < n; i++) {
-    const a = (i - (n - 1) / 2) * 0.42;          // fan angle
-    const l = len * (1 - Math.abs(i - (n - 1) / 2) * 0.22);
+    const a = (i - (n - 1) / 2) * 0.34;          // fan angle
+    const l = len * (1 - Math.abs(i - (n - 1) / 2) * 0.16);
     const g = LEAFLET.clone();
     g.scale(l * 0.9, l, 1);
     // lay flat (XY plane -> XZ), fan around Y, droop
@@ -81,7 +81,7 @@ function palmateLeaf(len: number, rand: () => number, dark: boolean): THREE.Buff
 export function makePlantGeometry(seed = 7): THREE.BufferGeometry {
   const rand = rng(seed);
   const parts: THREE.BufferGeometry[] = [];
-  const H = 0.55;
+  const H = 0.62;
   const stem = new THREE.CylinderGeometry(0.008, 0.014, H, 6);
   stem.translate(0, H / 2, 0);
   parts.push(colorize(stem, new THREE.Color('#5e7d3e')));
@@ -89,7 +89,7 @@ export function makePlantGeometry(seed = 7): THREE.BufferGeometry {
   for (let k = 0; k < nodes; k++) {
     const y = 0.12 + (k / (nodes - 1)) * (H - 0.2);
     const leaves = k < nodes - 1 ? 4 : 3;
-    const len = 0.22 - k * 0.03;
+    const len = 0.27 - k * 0.03;
     for (let j = 0; j < leaves; j++) {
       const g = palmateLeaf(len, rand, k < 2);
       g.rotateZ(-0.15 - rand() * 0.2);                       // droop
@@ -196,4 +196,67 @@ export function epoxyRoughness(): THREE.CanvasTexture {
   }, 1.2, 13);
   t.colorSpace = THREE.NoColorSpace;
   return t;
+}
+
+/** White plaster / plasterboard wall: very light noise, faint panel joints. */
+export function plasterTexture(): THREE.CanvasTexture {
+  return canvasTexture(512, (ctx, rand) => {
+    ctx.fillStyle = '#f1f1ee';
+    ctx.fillRect(0, 0, 512, 512);
+    for (let i = 0; i < 14000; i++) {
+      const v = 228 + Math.floor(rand() * 26);
+      ctx.fillStyle = `rgba(${v},${v},${v - 2},${0.25 + rand() * 0.3})`;
+      ctx.fillRect(rand() * 512, rand() * 512, 1 + rand() * 2, 1 + rand() * 2);
+    }
+    ctx.strokeStyle = 'rgba(180,180,175,0.35)';
+    ctx.lineWidth = 0.8;
+    for (const x of [128, 384]) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 512); ctx.stroke(); }
+  }, 0.5, 21);
+}
+
+/** Ribbed white aluminium bench tray: fine lengthwise ribs. */
+export function aluminiumRibTexture(): THREE.CanvasTexture {
+  const t = canvasTexture(256, (ctx) => {
+    ctx.fillStyle = '#e9ebee';
+    ctx.fillRect(0, 0, 256, 256);
+    for (let y = 0; y < 256; y += 8) {
+      ctx.fillStyle = 'rgba(160,165,172,0.55)';
+      ctx.fillRect(0, y, 256, 1);
+      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      ctx.fillRect(0, y + 2, 256, 1);
+    }
+  }, 1, 8);
+  t.repeat.set(1, 6);
+  return t;
+}
+
+/** Grodan Max block wrap: white with small dark print marks, brown top drawn separately. */
+export function grodanTexture(): THREE.CanvasTexture {
+  return canvasTexture(128, (ctx, rand) => {
+    ctx.fillStyle = '#f4f4f2';
+    ctx.fillRect(0, 0, 128, 128);
+    ctx.fillStyle = 'rgba(40,60,50,0.75)';
+    for (let i = 0; i < 9; i++) {
+      const x = rand() * 110, y = rand() * 110;
+      ctx.fillRect(x, y, 10 + rand() * 12, 3);
+      if (rand() > 0.5) ctx.fillRect(x, y + 5, 6 + rand() * 6, 2);
+    }
+    ctx.fillStyle = 'rgba(40,120,70,0.8)';
+    ctx.fillRect(10, 100, 24, 8);
+  }, 1, 33);
+}
+
+/** Galvanised steel: mottled grey spangle. */
+export function galvanisedTexture(): THREE.CanvasTexture {
+  return canvasTexture(256, (ctx, rand) => {
+    ctx.fillStyle = '#a9adb3';
+    ctx.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 700; i++) {
+      const v = 140 + Math.floor(rand() * 90);
+      ctx.fillStyle = `rgba(${v},${v + 3},${v + 8},0.6)`;
+      ctx.beginPath();
+      ctx.arc(rand() * 256, rand() * 256, 4 + rand() * 12, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }, 3, 44);
 }

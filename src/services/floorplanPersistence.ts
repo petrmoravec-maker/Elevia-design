@@ -15,6 +15,7 @@ import {
   doc,
   getDoc,
   updateDoc,
+  setDoc,
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -167,6 +168,8 @@ async function doSave(): Promise<void> {
       roomCount: Object.values(state.entities).filter(e => e.type === 'room').length,
       bindings,
     });
+    // small index for the Lab (DeviceDetail "Show on plan") - keep in sync with the main doc
+    await setDoc(doc(db, 'design_projects', currentProjectId, 'meta', 'bindings'), { bindings, updatedAt: serverTimestamp() }, { merge: true });
 
     currentRevision = nextRevision;
     useFloorplanStore.getState().markSaved();

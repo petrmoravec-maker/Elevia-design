@@ -82,6 +82,8 @@ export const DEFAULT_EQUIPMENT: Record<string, EquipmentItem[]> = {
   // Items referenced by the generated facility plan (facility-design/build.py write_scene)
   fixtures: [
     { id: 'grow_table_1200x1100', name: 'Grow table 1200 × 1100', category: 'fixtures', watts: 0, voltage: 240, drain: false, water: false },
+    { id: 'grow_bench', name: 'Rolling bench (continuous)', category: 'fixtures', watts: 0, voltage: 240, drain: true, water: true },
+    { id: 'led_fixture_8bar', name: 'LED fixture, 8 bars', category: 'lighting', watts: 630, voltage: 240, drain: false, water: false },
     { id: 'hvac_unit_external', name: 'HVAC unit (VZT)', category: 'fixtures', watts: 0, voltage: 240, drain: true, water: false },
     { id: 'water_tank', name: 'Water tank', category: 'fixtures', watts: 0, voltage: 240, drain: true, water: true },
     { id: 'wc_basin', name: 'WC / wash basin', category: 'fixtures', watts: 0, voltage: 120, drain: true, water: true },
